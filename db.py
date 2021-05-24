@@ -19,10 +19,10 @@ def dbsetup():
              [ocall] text, [ocat] text, [osec] text, [tcall] text, [tcat] text,
              [tsec] text, [datetime] text)''')
 
-'''
-LOGS - table rows:
-    band - mode - ocall - ocat - osec - tcall - tcat - tsec - datetime
-'''
+    '''
+    LOGS - table rows:
+        band - mode - ocall - ocat - osec - tcall - tcat - tsec - datetime
+    '''
 
 def logwrite():
     conn = sqlite3.connect(dbname)
