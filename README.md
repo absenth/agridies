@@ -1,4 +1,5 @@
-# ZEBLOG-FD - ARRL Field Day Logging Software
+# agridies - ARRL Field Day Logging Software
+_____Agridies from the latin root AGRI - or field, and DIES - or day_____
 
 ## Requirements
 
