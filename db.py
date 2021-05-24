@@ -14,9 +14,9 @@ c = conn.cursor()
 
 def dbsetup():
     c.execute('''CREATE TABLE LOGS
-             ([id] INTEGER PRIMARY KEY,[band] text, [mode] text,
-             [ocall] text, [ocat] text, [osec] text, [tcall] text, [tcat] text,
-             [tsec] text, [dt] timestamp)''')
+             ([id] INTEGER PRIMARY KEY NOT NULL AUTOINCREMENT,
+             [band] text, [mode] text, [ocall] text, [ocat] text, [osec] text,
+             [tcall] text, [tcat] text, [tsec] text, [dt] timestamp)''')
 
     c.commit()
 
@@ -26,12 +26,14 @@ def dbsetup():
     '''
 
 def logwrite():
-    dt = datetime.utcnow()
-    c.execute("INSERT INTO LOGS VALUES (band, mode, ocall, ocat, osec, tcall, tcat, tsec, dt)")
+    DT = datetime.utcnow()
+    c.execute('''INSERT INTO LOGS (band, mode, ocall, ocat, osec, tcall, tcat,
+             tsec, dt) VALUES (Band, Mode, Ocall, Ocat, Osec, Tcall, Tcat,
+             Tsec, DT)''')
 
 def logshow():
     c.execute("SELECT * FROM LOGS")
-    print(cur.fetchall())
+    print(c.fetchall())
 
 def logexport():
     '''
