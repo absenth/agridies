@@ -1,5 +1,6 @@
 # agridies - ARRL Field Day Logging Software
-_____Agridies from the latin root AGRI - or field, and DIES - or day_____
+_____Agridies from the latin root AGRI - field and DIES - day.  Thus the name
+of this project is literally "Field Day"_____
 
 ## Requirements
 
