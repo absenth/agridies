@@ -8,4 +8,6 @@ After initial setup, this should take input of "tcall, tcat, tsec" as well
 as "band and mode" which after entered should default to the previous values
 unless specifically overridden by user input (OR if we get hamlib/rigctl working)
 """
+import datetime
+from db import dbsetup, logwrite
 
