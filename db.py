@@ -4,7 +4,7 @@ ARRL Field Day contest.
 """
 
 import sqlite3
-import datetime
+from datetime import datetime, tzinfo
 
 # Set the database name based on this year.
 dbname=("agridieslog-"+str(datetime.date.today().year)+".db")
@@ -15,17 +15,18 @@ def dbsetup():
     c = conn.cursor()
 
     c.execute('''CREATE TABLE LOGS
-             ([generate_id] INTEGER PRIMARY KEY,[band] text, [mode] text,
+             ([id] INTEGER PRIMARY KEY,[band] text, [mode] text,
              [ocall] text, [ocat] text, [osec] text, [tcall] text, [tcat] text,
-             [tsec] text, [datetime] text)''')
+             [tsec] text, [dt] timestamp)''')
 
     '''
     LOGS - table rows:
-        band - mode - ocall - ocat - osec - tcall - tcat - tsec - datetime
+        band - mode - ocall - ocat - osec - tcall - tcat - tsec - dt
     '''
 
 def logwrite():
     conn = sqlite3.connect(dbname)
     c = conn.cursor()
 
-    c.execute("INSERT INTO LOGS VALUES (band, mode, ocall, ocat, osec, tcall, tcat, tsec, datetime)")
+    dt = datetime.utcnow()
+    c.execute("INSERT INTO LOGS VALUES (band, mode, ocall, ocat, osec, tcall, tcat, tsec, dt)")
