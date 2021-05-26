@@ -16,25 +16,25 @@ class DataBase:
 
     def dbsetup(self):
         self.conn()
-        self.conn.cursor().execute('''CREATE TABLE LOGS
+        self.conn.cursor().execute('''CREATE TABLE IF NOT EXISTS qso
                  ([id] INTEGER PRIMARY KEY NOT NULL,
                  [band] text, [mode] text, [ocall] text, [ocat] text, [osec] text,
                  [tcall] text, [tcat] text, [tsec] text, [dt] timestamp)''')
 
         '''
-        LOGS - table rows:
+        qso - table rows:
             band - mode - ocall - ocat - osec - tcall - tcat - tsec - dt
         '''
 
     def logwrite(self):
         DT = datetime.utcnow()
-        self.conn.cursor().execute('''INSERT INTO LOGS (band, mode, ocall, ocat, osec, tcall, tcat,
+        self.conn.cursor().execute('''INSERT INTO qso (band, mode, ocall, ocat, osec, tcall, tcat,
                  tsec, dt) VALUES (Band, Mode, Ocall, Ocat, Osec, Tcall, Tcat,
                  Tsec, DT)''')
 
     def logshow(self):
         c = self.conn.cursor()
-        c.execute("SELECT * FROM LOGS")
+        c.execute("SELECT * FROM qso")
         print(c.fetchall())
 
     def logexport(self):
