@@ -5,15 +5,15 @@ if the user answers no, we should assume we're already configured for this year
 """
 import os.path
 from datetime import datetime, tzinfo
-from agridiesdb import dbsetup
+from database import DataBase
 
 def checkdb():
-    dbname=("agridieslog-"+str(datetime.today().year)+".db")
+    dbname=("fielddaylog-"+str(datetime.today().year)+".db")
     if os.path.isfile(dbname):
         print("DB Exists")
     else:
         print("DB Doesn't exist, running dbsetup")
-        dbsetup()
+        DataBase.dbsetup()
 
 def setstation():
     Ocall = input("What is your Station Callsign: ").upper()
