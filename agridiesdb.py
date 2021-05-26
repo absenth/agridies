@@ -7,7 +7,7 @@ import sqlite3
 from datetime import datetime, tzinfo
 
 # Set the database name based on this year.
-dbname=("agridieslog-"+str(datetime.date.today().year)+".db")
+dbname=("agridieslog-"+str(datetime.today().year)+".db")
 conn = sqlite3.connect(dbname)
 c = conn.cursor()
 
