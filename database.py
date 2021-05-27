@@ -18,18 +18,17 @@ class DataBase:
         self.conn.cursor().execute('''CREATE TABLE IF NOT EXISTS qso
                 ([qso] INTEGER PRIMARY KEY NOT NULL,
                 [utcdatetime] TEXT, [band] TEXT, [mode] TEXT,
-                [ocall] TEXT, [ocat] TEXT, [osec] TEXT,
                 [tcall] TEXT, [tcat] TEXT, [tsec] TEXT) ''')
 
         """
         qso - table rows:
-            qso - utcdatetime - band - mode - ocall - ocat - osec - tcall - tcat - tsec
+            qso - utcdatetime - band - mode - tcall - tcat - tsec
         """
 
     def logwrite(self):
         dt = str(datetime.utcnow())
         self.conn.cursor().execute(''' INSERT INTO qso VALUES(dt, band, mode,
-                Ocall, Ocat, Osec, Tcall, Tcat, Tsec) ''')
+                Tcall, Tcat, Tsec) ''')
 
     def logshow(self):
         c = self.conn.cursor()
@@ -45,6 +44,11 @@ class DataBase:
         I should figure out how to make DT look like "2021-06-26 1314"
         Or perhaps create a date, and a time table, and only insert
         the simplified values.
+
+        Also, because we're not inserting our callsign, category or section
+        into the database with each qso, we will need to construct that as we
+        write the Cabrillo export.
         """
+
 def callMethod(o, name):
     return getattr(o, name)()
