@@ -26,9 +26,7 @@ class DataBase:
         """
 
     def logwrite(self):
-        dt = str(datetime.utcnow())
-        self.conn.cursor().execute(''' INSERT INTO qso VALUES(dt, band, mode,
-                Tcall, Tcat, Tsec) ''')
+        self.conn.cursor().execute('INSERT INTO qso VALUES( ?, ?, ?, ?, ?, ?)')
 
     def logshow(self):
         c = self.conn.cursor()

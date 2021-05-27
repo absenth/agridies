@@ -36,7 +36,7 @@ def setstation():
         """
             Will need to write these variables to a file that we can then
             read from databsase.py, for when we write log entries.
-            
+
             Alternately look into setting up a singleton class.
         """
 
