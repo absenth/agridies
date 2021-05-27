@@ -29,7 +29,7 @@ class DataBase:
     def logwrite(self):
         dt = str(datetime.utcnow())
         self.conn.cursor().execute(''' INSERT INTO qso VALUES(dt, band, mode,
-                ocall, ocat, osec, tcall, tcat, tsec) ''')
+                Ocall, Ocat, Osec, Tcall, Tcat, Tsec) ''')
 
     def logshow(self):
         c = self.conn.cursor()
@@ -46,3 +46,5 @@ class DataBase:
         Or perhaps create a date, and a time table, and only insert
         the simplified values.
         """
+def callMethod(o, name):
+    return getattr(o, name)()
