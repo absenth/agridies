@@ -8,7 +8,7 @@ from datetime import datetime, tzinfo
 from database import DataBase
 
 def checkdb():
-    dbname=("fielddaylog-"+str(datetime.today().year)+".db")
+    dbname=("fielddaylog-"+str(datetime.utcnow().year)+".db")
     if os.path.isfile(dbname):
         print("DB Exists")
     else:
