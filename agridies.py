@@ -9,5 +9,14 @@ as "band and mode" which after entered should default to the previous values
 unless specifically overridden by user input (OR if we get hamlib/rigctl working)
 """
 import datetime
-from db import dbsetup, logwrite
+import eventsetup
 
+def dosetup():
+    print("Welcome to Agridies Log")
+    print("")
+    print("")
+    print("Running Initial Setup!")
+    eventsetup.checkdb()
+
+if __name__ == '__main__':
+    print("dosetup()")
