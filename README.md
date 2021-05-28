@@ -34,3 +34,4 @@ of this project is literally "Field Day"_____
 2. For Radio Interface (requirement 4) [g0fcu hamlib gui](https://github.com/g0fcu/gqrx-hamlib-gui)
    * [gqrx-hamlib cli](https://github.com/absenth/gqrx-hamlib)
    * [hamlib documentation](https://github.com/Hamlib/Hamlib/wiki)
+3. [Cement](https://docs.builtoncement.com/) - an advanced CLI Framework
