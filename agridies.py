@@ -60,7 +60,7 @@ def dbsetup():
     """ Create our database & Table"""
     conn = sqlite3.connect(dbname)
     conn.cursor().execute('''CREATE TABLE IF NOT EXISTS qso
-        ([qso] INTEGER PRIMARY KEY NOT NULL, [utcdatetime] TEXT,
+        ([qso] INTEGER PRIMARY KEY NOT NULL, [utcdate] TEXT, [utctime] TEXT,
         [band] TEXT, [mode] TEXT, [tcall] TEXT, [tcat] TEXT, [tsec] TEXT) ''')
 
     print("Created Database " + dbname)
@@ -69,20 +69,21 @@ def dbsetup():
 
 def getqso():
     """ Get qso details and write them to the database."""
-    dt = str(datetime.utcnow())
+    utcdate = (str(datetime.utcnow().date()))
+    utctime = (str(datetime.utcnow().strftime('%H%M')))
     tcall = input("Their Callsign: ").upper()
     tcat = input("Their Category: ").upper()
     tsec = input("Their Section: ").upper()
 
     conn = sqlite3.connect(dbname)
-    qso = (dt, band, mode, tcall, tcat, tsec)
+    qso = (utcdate, utctime, band, mode, tcall, tcat, tsec)
     create_qso(conn, qso)
 
 
 def create_qso(conn, qso):
     """ Function for actually writing qso entries, called by getqso()"""
-    sql = ''' INSERT INTO qso(utcdatetime, band, mode, tcall, tcat, tsec)
-              VALUES(?, ?, ?, ?, ?, ?) '''
+    sql = ''' INSERT INTO qso(utcdate, utctime, band, mode, tcall, tcat, tsec)
+              VALUES(?, ?, ?, ?, ?, ?, ?) '''
     cur = conn.cursor()
     cur.execute(sql, qso)
     conn.commit()
