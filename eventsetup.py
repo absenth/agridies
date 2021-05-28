@@ -15,9 +15,7 @@ def checkdb():
         setstation()
     else:
         print("DB Doesn't exist, running dbsetup")
-        database = DataBase()
-        callMethod(database, "dbsetup")
-        setstation()
+;s
 
 def setstation():
     stationfile=("Station.csv")

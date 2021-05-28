@@ -25,6 +25,21 @@ class DataBase:
             qso - utcdatetime - band - mode - tcall - tcat - tsec
         """
 
+    @property
+    def utcdatetime(self):
+        return self._utcdatetime
+
+    @property
+    def band(self):
+        return self._band
+
+    @property
+    def mode(self):
+        return self._mode
+
+    @property
+
+
     def logwrite(self):
         self.conn.cursor().execute('INSERT INTO qso VALUES( ?, ?, ?, ?, ?, ?)')
 

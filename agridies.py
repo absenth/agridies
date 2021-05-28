@@ -17,8 +17,7 @@ def dosetup():
     print("")
     print("")
     print("Running Initial Setup!")
-    eventsetup.checkdb()
-
+;s
 def qsolog():
     dt = str(datetime.utcnow())
     band = "14.250" ##FIXME Either pull from rigctl or take input from user##
