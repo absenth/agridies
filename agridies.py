@@ -15,7 +15,7 @@ import sys
 from datetime import datetime
 
 # Set dbname variable for all the things that need it.
-dbname = ("fielddaylog-"+str(datetime.utcnow().year)+".db")
+dbname = (f"fielddaylog-{str(datetime.utcnow().year)}.db")
 band = ("14.250")  # FIXME When hamlib works
 mode = ("PH")  # FIXME When hamlib works
 
@@ -63,8 +63,8 @@ def dbsetup():
         ([qso] INTEGER PRIMARY KEY NOT NULL, [utcdate] TEXT, [utctime] TEXT,
         [band] TEXT, [mode] TEXT, [tcall] TEXT, [tcat] TEXT, [tsec] TEXT) ''')
 
-    print("Created Database " + dbname)
-    # FIXME Send this to the next function.
+    print(f"Created Database {dbname}")
+    # FIXME Send this to the getqso() function.
 
 
 def getqso():
