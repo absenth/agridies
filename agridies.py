@@ -14,86 +14,114 @@ import sqlite3
 import sys
 from datetime import datetime
 
-# Set dbname variable for all the things that need it.
-dbname = (f"fielddaylog-{str(datetime.utcnow().year)}.db")
+""" Set global variables for all the things that need them. """
+year = (str(datetime.utcnow().year))
+dbname = (f"fielddaylog-{year}.db")
+settings = (f"fielddaylog-{year}.settings")
 band = ("14.250")  # FIXME When hamlib works
 mode = ("PH")  # FIXME When hamlib works
 
-
-def dosetup():
-    """ Start Agridies and ensure it's ready to work."""
-    print("Welcome to Agridies Log")
-    print("")
-    print("")
-    fdsetup = input("Do you need to run the setup? (Yes/No): ").upper()
-
-    if (fdsetup) == "YES":
-        eventsetup()
-    elif (fdsetup) == "NO":
-        print("Checking to see if we need to setup this years Database")
-        checkdb()
-    else:
-        print(f"I don't know what {fdsetup} Means, exiting")
-        sys.exit()
+print("Welcome to Agridies Log\n\n")
+print(f"Have a great {year} Field day!\n\n")
 
 
-def eventsetup():
-    """ Grab our station details."""
+def main():
+    if not has_db():
+        create_db()
+
+    if not has_settings():
+        store_settings()
+
+    while contesting():  # FIXME - obviously incomplete
+        pass
+
+
+def has_db():
+    """ Check for this year's Database """
+    # FIXME - we should turn this into a query for the qso table
+    if os.path.isfile(dbname):
+        print("Database Exists")
+        return True
+
+
+def has_settings():
+    """ Check for this year's Station Details """
+    # FIXME - here we need to check the station table for data
+    if has_db():
+        print("Settings In Place")
+        return True
+
+
+def store_settings(conn, station):
+    """ Setup station table write function """
+    sql = ''' INSERT INTO station(callsign, category, section)
+                VALUES(?, ?, ?) '''
+    cur = conn.cursor()
+    cur.execute(sql, station)
+    conn.commit()
+    return cur.lastrowid
+
+
+def write_settings():
+    """ Get and Write station data into station table """
     ocall = input("What is your field day callsign?: ").upper()
     ocat = input("What is your field day Category?: ").upper()
     osec = input("What is your ARRL Section?: ").upper()
-    print(f"We are {ocall} {ocat} {osec}")
-    checkdb()
+
+    conn = sqlite3.connect(dbname)
+    station = (ocall, ocat, osec)
+
+    store_settings(conn, station)
 
 
-def checkdb():
-    """ Verify we have a SQLITE3 database for this year."""
-    if os.path.isfile(dbname):
-        print("Database Exists")
-        getqso()
-    else:
-        print("Database Doesn't exist, running database setup script")
-        dbsetup()
-
-
-def dbsetup():
+def create_db():
     """ Create our database & Table"""
     conn = sqlite3.connect(dbname)
     conn.cursor().execute('''CREATE TABLE IF NOT EXISTS qso
         ([qso] INTEGER PRIMARY KEY NOT NULL, [utcdate] TEXT, [utctime] TEXT,
         [band] TEXT, [mode] TEXT, [tcall] TEXT, [tcat] TEXT, [tsec] TEXT,
         [ocall] TEXT, [ocat] TEXT, [osec] TEXT) ''')
+    conn.cursor().execute('''CREATE TABLE IF NOT EXISTS station
+        ([callsign] TEXT, [category] TEXT, [section] TEXT) ''')
 
     print(f"Created Database {dbname}")
-    getqso()
 
 
-def getqso():
+def contesting():
     """ Get qso details and write them to the database."""
+    ocall = ()  # FIXME - pull from station table )
+    ocat = ()   # FIXME - pull from station table )
+    osec = ()   # FIXME - pull from station table )
     utcdate = (str(datetime.utcnow().date()))
     utctime = (str(datetime.utcnow().strftime('%H%M')))
     tcall = input("Their Callsign: ").upper()
+
+    """ Let's see if we can detect no input and use that as an exit criteria"""
+    if not tcall:
+        print("You didn't enter a callsign.  Do you want to exit?")
+        exit = input("YES or NO: ").upper()
+        if (exit) == "YES":
+            sys.exit()
+        elif(exit) == "NO":
+            tcall = input("Their Callsign: ").upper()
+        else:
+            print(f"I'm not sure what {exit} is, but I'm exiting anyway.")
+            sys.exit()
+
     tcat = input("Their Category: ").upper()
     tsec = input("Their Section: ").upper()
 
     conn = sqlite3.connect(dbname)
     qso = (utcdate, utctime, band, mode, tcall, tcat, tsec, ocall, ocat, osec)
 
-    # FIXME - for reasons unknown ocall, ocat, osec are unknown?
-    """
-    File "/home/lars/git/absenth/agridies/agridies.py", line 68, in getqso
-     qso = (utcdate, utctime, band, mode, tcall, tcat, tsec, ocall, ocat, osec)
-    NameError: name 'ocall' is not defined
-    """
-
     create_qso(conn, qso)
 
 
 def create_qso(conn, qso):
     """ Function for actually writing qso entries, called by getqso()"""
-    sql = ''' INSERT INTO qso(utcdate, utctime, band, mode, tcall, tcat, tsec,
-                ocall, ocat, osec)
-              VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?) '''
+    sql = ''' INSERT INTO qso(utcdate, utctime, band, mode,
+                tcall, tcat, tsec, ocall, ocat, osec)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?) '''
     cur = conn.cursor()
     cur.execute(sql, qso)
     conn.commit()
@@ -112,9 +140,6 @@ def showlogs():
 def rigctlsetup():
     #do rigcontrol setup
 
-def showlogs():
-    #show all current logs
-    #maybe we put this in a separate script?
 
 def exportlogs():
     #create cabrillo format export of logs
@@ -123,4 +148,4 @@ def exportlogs():
 
 
 if __name__ == "__main__":
-    dosetup()
+    main()
