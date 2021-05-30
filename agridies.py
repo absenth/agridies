@@ -39,18 +39,18 @@ def dosetup():
 
 def eventsetup():
     """ Grab our station details."""
-    Ocall = input("What is your field day callsign?: ").upper
-    Ocat = input("What is your field day Category?: ").upper
-    Osec = input("What is your ARRL Section?: ").upper
+    ocall = input("What is your field day callsign?: ").upper()
+    ocat = input("What is your field day Category?: ").upper()
+    osec = input("What is your ARRL Section?: ").upper()
+    print(f"We are {ocall} {ocat} {osec}")
     checkdb()
-    # FIXME We need to put our station details somewhere.
 
 
 def checkdb():
     """ Verify we have a SQLITE3 database for this year."""
     if os.path.isfile(dbname):
         print("Database Exists")
-        # FIXME Send this to the next funciton.
+        getqso()
     else:
         print("Database Doesn't exist, running database setup script")
         dbsetup()
@@ -61,10 +61,11 @@ def dbsetup():
     conn = sqlite3.connect(dbname)
     conn.cursor().execute('''CREATE TABLE IF NOT EXISTS qso
         ([qso] INTEGER PRIMARY KEY NOT NULL, [utcdate] TEXT, [utctime] TEXT,
-        [band] TEXT, [mode] TEXT, [tcall] TEXT, [tcat] TEXT, [tsec] TEXT) ''')
+        [band] TEXT, [mode] TEXT, [tcall] TEXT, [tcat] TEXT, [tsec] TEXT,
+        [ocall] TEXT, [ocat] TEXT, [osec] TEXT) ''')
 
     print(f"Created Database {dbname}")
-    # FIXME Send this to the getqso() function.
+    getqso()
 
 
 def getqso():
@@ -76,14 +77,23 @@ def getqso():
     tsec = input("Their Section: ").upper()
 
     conn = sqlite3.connect(dbname)
-    qso = (utcdate, utctime, band, mode, tcall, tcat, tsec)
+    qso = (utcdate, utctime, band, mode, tcall, tcat, tsec, ocall, ocat, osec)
+
+    # FIXME - for reasons unknown ocall, ocat, osec are unknown?
+    """
+    File "/home/lars/git/absenth/agridies/agridies.py", line 68, in getqso
+     qso = (utcdate, utctime, band, mode, tcall, tcat, tsec, ocall, ocat, osec)
+    NameError: name 'ocall' is not defined
+    """
+
     create_qso(conn, qso)
 
 
 def create_qso(conn, qso):
     """ Function for actually writing qso entries, called by getqso()"""
-    sql = ''' INSERT INTO qso(utcdate, utctime, band, mode, tcall, tcat, tsec)
-              VALUES(?, ?, ?, ?, ?, ?, ?) '''
+    sql = ''' INSERT INTO qso(utcdate, utctime, band, mode, tcall, tcat, tsec,
+                ocall, ocat, osec)
+              VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?) '''
     cur = conn.cursor()
     cur.execute(sql, qso)
     conn.commit()
