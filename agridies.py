@@ -11,7 +11,6 @@ unless specifically overridden by user input orif we get hamlib/rigctl working
 
 import os.path
 import sqlite3
-import sys
 from datetime import datetime
 
 """ Set global variables for all the things that need them. """
@@ -32,7 +31,7 @@ def main():
     if not has_settings():
         store_settings()
 
-    while contesting():  # FIXME - obviously incomplete
+    while contesting():
         pass
 
 
@@ -76,12 +75,11 @@ def write_settings():
 
 def create_db():
     """ Create our database & Table"""
-    conn = sqlite3.connect(dbname)
-    conn.cursor().execute('''CREATE TABLE IF NOT EXISTS qso
+    get_db_cursor().execute('''CREATE TABLE IF NOT EXISTS qso
         ([qso] INTEGER PRIMARY KEY NOT NULL, [utcdate] TEXT, [utctime] TEXT,
         [band] TEXT, [mode] TEXT, [tcall] TEXT, [tcat] TEXT, [tsec] TEXT,
         [ocall] TEXT, [ocat] TEXT, [osec] TEXT) ''')
-    conn.cursor().execute('''CREATE TABLE IF NOT EXISTS station
+    get_db_cursor().execute('''CREATE TABLE IF NOT EXISTS station
         ([callsign] TEXT, [category] TEXT, [section] TEXT) ''')
 
     print(f"Created Database {dbname}")
@@ -101,12 +99,12 @@ def contesting():
         print("You didn't enter a callsign.  Do you want to exit?")
         exit = input("YES or NO: ").upper()
         if (exit) == "YES":
-            sys.exit()
+            return False
         elif(exit) == "NO":
             tcall = input("Their Callsign: ").upper()
         else:
             print(f"I'm not sure what {exit} is, but I'm exiting anyway.")
-            sys.exit()
+            return False
 
     tcat = input("Their Category: ").upper()
     tsec = input("Their Section: ").upper()
@@ -130,10 +128,14 @@ def create_qso(conn, qso):
 
 def showlogs():
     """ Function to display all logs"""
-    conn = sqlite3.connect(dbname)
-    conn.cursor().execute("SELECT * FROM qso")
+    get_db_cursor().execute("SELECT * FROM qso")
     print(conn.fetchall())
     # FIXME - This is broken
+
+
+def get_db_cursor():
+    conn = sqlite3.connect(dbname)
+    conn.cursor().execute()
 
 
 '''
@@ -149,3 +151,12 @@ def exportlogs():
 
 if __name__ == "__main__":
     main()
+
+
+""" FIXME -
+so for example here:
+https://github.com/absenth/agridies/blob/72732f388c1cb7fd96184836c9cc3a3660667c1b/agridies.py#L79-L80
+you would replace conn.cursor().execute( with get_db_cursor().execute( and not
+need the line above it that connects to the db (because your new function will
+be doing that behind-the-scenes).
+"""

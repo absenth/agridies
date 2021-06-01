@@ -35,3 +35,4 @@ of this project is literally "Field Day"_____
    * [gqrx-hamlib cli](https://github.com/absenth/gqrx-hamlib)
    * [hamlib documentation](https://github.com/Hamlib/Hamlib/wiki)
 3. [Cement](https://docs.builtoncement.com/) - an advanced CLI Framework
+4. [Py_CUI](https://github.com/jwlodek/py_cui) - another CUI/TUI Framework
