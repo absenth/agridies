@@ -151,12 +151,3 @@ def exportlogs():
 
 if __name__ == "__main__":
     main()
-
-
-""" FIXME -
-so for example here:
-https://github.com/absenth/agridies/blob/72732f388c1cb7fd96184836c9cc3a3660667c1b/agridies.py#L79-L80
-you would replace conn.cursor().execute( with get_db_cursor().execute( and not
-need the line above it that connects to the db (because your new function will
-be doing that behind-the-scenes).
-"""
