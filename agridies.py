@@ -9,9 +9,9 @@ as "band and mode" which after entered should default to the previous values
 unless specifically overridden by user input orif we get hamlib/rigctl working
 """
 
-import os.path
 import sqlite3
 from datetime import datetime
+from db_utils import db_connect
 
 """ Set global variables for all the things that need them. """
 year = (str(datetime.utcnow().year))
@@ -20,11 +20,17 @@ settings = (f"fielddaylog-{year}.settings")
 band = ("14.250")  # FIXME When hamlib works
 mode = ("PH")  # FIXME When hamlib works
 
+""" setup database extractions """
+con = db_connect()
+cur = con.cursor()
+
 print("Welcome to Agridies Log\n\n")
 print(f"Have a great {year} Field day!\n\n")
 
 
 def main():
+    print("Main")
+    """
     if not has_db():
         create_db()
 
@@ -33,31 +39,26 @@ def main():
 
     while contesting():
         pass
+    """
 
 
 def has_db():
     """ Check for this year's Database """
-    # FIXME - we should turn this into a query for the qso table
-    if os.path.isfile(dbname):
-        print("Database Exists")
-        return True
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    print(cur.fetchall())  # FIXME - add if logic here for qso/settings
 
 
 def has_settings():
     """ Check for this year's Station Details """
-    # FIXME - here we need to check the station table for data
-    if has_db():
-        print("Settings In Place")
-        return True
+    cur.execute("SELECT station FROM settings")
+    print(cur.fetchall())  # FIXME - add if logic here for not-null
 
 
-def store_settings(conn, station):
+def store_settings(con, station):
     """ Setup station table write function """
-    sql = ''' INSERT INTO station(callsign, category, section)
+    settings_sql = ''' INSERT INTO station(callsign, category, section)
                 VALUES(?, ?, ?) '''
-    cur = conn.cursor()
-    cur.execute(sql, station)
-    conn.commit()
+    cur.execute(settings_sql)
     return cur.lastrowid
 
 
@@ -67,19 +68,17 @@ def write_settings():
     ocat = input("What is your field day Category?: ").upper()
     osec = input("What is your ARRL Section?: ").upper()
 
-    conn = sqlite3.connect(dbname)
     station = (ocall, ocat, osec)
-
-    store_settings(conn, station)
+    store_settings(con, station)
 
 
 def create_db():
     """ Create our database & Table"""
-    get_db_cursor().execute('''CREATE TABLE IF NOT EXISTS qso
+    cur().execute('''CREATE TABLE IF NOT EXISTS qso
         ([qso] INTEGER PRIMARY KEY NOT NULL, [utcdate] TEXT, [utctime] TEXT,
         [band] TEXT, [mode] TEXT, [tcall] TEXT, [tcat] TEXT, [tsec] TEXT,
         [ocall] TEXT, [ocat] TEXT, [osec] TEXT) ''')
-    get_db_cursor().execute('''CREATE TABLE IF NOT EXISTS station
+    cur().execute('''CREATE TABLE IF NOT EXISTS station
         ([callsign] TEXT, [category] TEXT, [section] TEXT) ''')
 
     print(f"Created Database {dbname}")
@@ -109,10 +108,9 @@ def contesting():
     tcat = input("Their Category: ").upper()
     tsec = input("Their Section: ").upper()
 
-    conn = sqlite3.connect(dbname)
     qso = (utcdate, utctime, band, mode, tcall, tcat, tsec, ocall, ocat, osec)
 
-    create_qso(conn, qso)
+    create_qso(con, qso)
 
 
 def create_qso(conn, qso):
@@ -120,22 +118,16 @@ def create_qso(conn, qso):
     sql = ''' INSERT INTO qso(utcdate, utctime, band, mode,
                 tcall, tcat, tsec, ocall, ocat, osec)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?) '''
-    cur = conn.cursor()
     cur.execute(sql, qso)
-    conn.commit()
+    con.commit()
     return cur.lastrowid
 
 
-def showlogs():
+def showlogs(con):
     """ Function to display all logs"""
-    get_db_cursor().execute("SELECT * FROM qso")
-    print(conn.fetchall())
+    cur().execute("SELECT * FROM qso")
+    print(con.fetchall())
     # FIXME - This is broken
-
-
-def get_db_cursor():
-    conn = sqlite3.connect(dbname)
-    conn.cursor().execute()
 
 
 '''
