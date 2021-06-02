@@ -29,17 +29,14 @@ print(f"Have a great {year} Field day!\n\n")
 
 
 def main():
-    print("Main")
-    """
     if not has_db():
         create_db()
 
     if not has_settings():
-        store_settings()
+        write_settings()
 
     while contesting():
         pass
-    """
 
 
 def has_db():
@@ -50,15 +47,16 @@ def has_db():
 
 def has_settings():
     """ Check for this year's Station Details """
-    cur.execute("SELECT station FROM settings")
+    cur.execute("SELECT callsign FROM station")
     print(cur.fetchall())  # FIXME - add if logic here for not-null
+    return False
 
 
 def store_settings(con, station):
     """ Setup station table write function """
-    settings_sql = ''' INSERT INTO station(callsign, category, section)
+    station_sql = ''' INSERT INTO station(callsign, category, section)
                 VALUES(?, ?, ?) '''
-    cur.execute(settings_sql)
+    cur.execute(station_sql)
     return cur.lastrowid
 
 
@@ -74,11 +72,11 @@ def write_settings():
 
 def create_db():
     """ Create our database & Table"""
-    cur().execute('''CREATE TABLE IF NOT EXISTS qso
+    cur.execute('''CREATE TABLE IF NOT EXISTS qso
         ([qso] INTEGER PRIMARY KEY NOT NULL, [utcdate] TEXT, [utctime] TEXT,
         [band] TEXT, [mode] TEXT, [tcall] TEXT, [tcat] TEXT, [tsec] TEXT,
         [ocall] TEXT, [ocat] TEXT, [osec] TEXT) ''')
-    cur().execute('''CREATE TABLE IF NOT EXISTS station
+    cur.execute('''CREATE TABLE IF NOT EXISTS station
         ([callsign] TEXT, [category] TEXT, [section] TEXT) ''')
 
     print(f"Created Database {dbname}")
@@ -125,7 +123,7 @@ def create_qso(conn, qso):
 
 def showlogs(con):
     """ Function to display all logs"""
-    cur().execute("SELECT * FROM qso")
+    cur.execute("SELECT * FROM qso")
     print(con.fetchall())
     # FIXME - This is broken
 
