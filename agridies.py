@@ -62,12 +62,31 @@ def create_settings(con, settings):
     con.commit()
     return cur.lastrowid
 
+def category_check(valueToCheck):   
+  """ Function to check valid category input """
+    equals = False
+    numbers = []
+    for i in range(1, 21):
+        numbers.append(i)
+    letters = ['A', 'B', 'C', 'D', 'E', 'F']
+    for element in numbers:
+        for signum in letters:
+            if str(element) + signum == valueToCheck:
+                equals = True    
+    return equals
+ 
 
 def write_settings():
     """ Function to collect station details and push them to the db """
     ocall = input("What is your station callsign: ").upper()
+    if not category_check(ocat):
+        ocat = input("What is your field day Category?: ").upper() 
     ocat = input("What is your category: ").upper()
     osec = input("What is your section: ").upper()
+
+ #you have to decide what 
+        #actually happens if user enters the wrong category. This would be my suggestion.
+    osec = input("What is your ARRL Section?: ").upper()
 
     settings = (ocall, ocat, osec)
     create_settings(con, settings)
