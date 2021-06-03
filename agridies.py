@@ -61,11 +61,27 @@ def store_settings(conn, station):
     conn.commit()
     return cur.lastrowid
 
+def check(valueToCheck):   #the function I added. I thought it would be better to 
+    # create a separate function for this
+    equals = False
+    numbers = []
+    for i in range(1, 21):
+        numbers.append(i)
+    letters = ['A', 'B', 'C', 'D', 'E', 'F']
+    for element in numbers:
+        for signum in letters:
+            if str(element) + signum == valueToCheck:
+                equals = True    
+    return equals
+ 
 
 def write_settings():
     """ Get and Write station data into station table """
     ocall = input("What is your field day callsign?: ").upper()
     ocat = input("What is your field day Category?: ").upper()
+    if not check(ocat):
+        ocat = input("What is your field day Category?: ").upper()  #you have to decide what 
+        #actually happens if user enters the wrong category. This would be my suggestion.
     osec = input("What is your ARRL Section?: ").upper()
 
     conn = sqlite3.connect(dbname)
