@@ -1,5 +1,6 @@
 """ Pull and Parse Band & Mode information from the attached rig. """
 
+import shutil
 import subprocess
 
 model = "1"  # CHANGEME - get your rig id from `rigctl -l`
@@ -14,3 +15,11 @@ def get_riginfo():
                           capture_output=True, text=True).stdout
 
     return(mode.splitlines()[0], band.splitlines()[0])
+
+
+def detect_rigctl():
+    if shutil.which("rigctl"):
+        get_riginfo()
+    else:
+        print("rigctl doesn't appear installed.")
+        # FIXME - Determine what the least painful path forward is
