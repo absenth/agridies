@@ -7,5 +7,6 @@ settings = (f"fielddaylog-{year}.settings")
 
 
 def db_connect():
+    """ define database connection """
     con = sqlite3.connect(dbname)
     return con

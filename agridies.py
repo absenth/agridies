@@ -9,7 +9,6 @@ as "band and mode" which after entered should default to the previous values
 unless specifically overridden by user input orif we get hamlib/rigctl working
 """
 
-import sqlite3
 from datetime import datetime
 from db_utils import db_connect
 
@@ -29,6 +28,7 @@ print(f"Have a great {year} Field day!\n\n")
 
 
 def main():
+    """ setup main function """
     if not has_db():
         create_db()
 
@@ -48,34 +48,42 @@ def has_db():
 def has_settings():
     """ Check for this year's Station Details """
     cur.execute("SELECT callsign FROM station")
-    print(cur.fetchall())  # FIXME - add if logic here for not-null
-    return False
+    ocall = cur.fetchone()
+    if ocall is not None:
+        print(f"Have a great field day {ocall}!")
+        return True
 
 
-def store_settings(con, station):
-    """ Setup station table write function """
-    station_sql = ''' INSERT INTO station(callsign, category, section)
-                VALUES(?, ?, ?) '''
-    cur.execute(station_sql)
+def create_settings(con, settings):
+    """ Function for actually writing station details """
+    sql = ''' INSERT INTO station(callsign, category, section)
+              VALUES(?, ?, ?) '''
+    cur.execute(sql, settings)
+    con.commit()
     return cur.lastrowid
 
 
 def write_settings():
-    """ Get and Write station data into station table """
-    ocall = input("What is your field day callsign?: ").upper()
-    ocat = input("What is your field day Category?: ").upper()
-    osec = input("What is your ARRL Section?: ").upper()
+    """ Function to collect station details and push them to the db """
+    ocall = input("What is your station callsign: ").upper()
+    ocat = input("What is your category: ").upper()
+    osec = input("What is your section: ").upper()
 
-    station = (ocall, ocat, osec)
-    store_settings(con, station)
+    settings = (ocall, ocat, osec)
+    create_settings(con, settings)
 
 
 def create_db():
     """ Create our database & Table"""
     cur.execute('''CREATE TABLE IF NOT EXISTS qso
         ([qso] INTEGER PRIMARY KEY NOT NULL, [utcdate] TEXT, [utctime] TEXT,
-        [band] TEXT, [mode] TEXT, [tcall] TEXT, [tcat] TEXT, [tsec] TEXT,
-        [ocall] TEXT, [ocat] TEXT, [osec] TEXT) ''')
+        [band] TEXT, [mode] TEXT,
+        [tcall] TEXT NOT NULL,
+        [tcat] TEXT NOT NULL,
+        [tsec] TEXT NOT NULL,
+        [ocall] TEXT NOT NULL,
+        [ocat] TEXT NOT NULL,
+        [osec] TEXT NOT NULL) ''')
     cur.execute('''CREATE TABLE IF NOT EXISTS station
         ([callsign] TEXT, [category] TEXT, [section] TEXT) ''')
 
@@ -84,9 +92,15 @@ def create_db():
 
 def contesting():
     """ Get qso details and write them to the database."""
-    ocall = ()  # FIXME - pull from station table )
-    ocat = ()   # FIXME - pull from station table )
-    osec = ()   # FIXME - pull from station table )
+    cur.execute("SELECT callsign FROM station")
+    ocall = cur.fetchone()[0]
+
+    cur.execute("SELECT category FROM station")
+    ocat = cur.fetchone()[0]
+
+    cur.execute("SELECT section FROM station")
+    osec = cur.fetchone()[0]
+
     utcdate = (str(datetime.utcnow().date()))
     utctime = (str(datetime.utcnow().strftime('%H%M')))
     tcall = input("Their Callsign: ").upper()
@@ -106,15 +120,15 @@ def contesting():
     tcat = input("Their Category: ").upper()
     tsec = input("Their Section: ").upper()
 
-    qso = (utcdate, utctime, band, mode, tcall, tcat, tsec, ocall, ocat, osec)
+    qso = (utcdate, utctime, band, mode, ocall, ocat, osec, tcall, tcat, tsec)
 
     create_qso(con, qso)
 
 
-def create_qso(conn, qso):
+def create_qso(con, qso):
     """ Function for actually writing qso entries, called by getqso()"""
     sql = ''' INSERT INTO qso(utcdate, utctime, band, mode,
-                tcall, tcat, tsec, ocall, ocat, osec)
+                ocall, ocat, osec, tcall, tcat, tsec)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?) '''
     cur.execute(sql, qso)
     con.commit()
