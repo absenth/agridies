@@ -13,7 +13,7 @@ from datetime import datetime
 from db_utils import db_connect
 
 """ Set global variables for all the things that need them. """
-year = (str(datetime.utcnow().year))
+year = str(datetime.utcnow().year)
 dbname = (f"fielddaylog-{year}.db")
 settings = (f"fielddaylog-{year}.settings")
 band = ("14.250")  # FIXME When hamlib works
@@ -78,12 +78,14 @@ def create_db():
     cur.execute('''CREATE TABLE IF NOT EXISTS qso
         ([qso] INTEGER PRIMARY KEY NOT NULL, [utcdate] TEXT, [utctime] TEXT,
         [band] TEXT, [mode] TEXT,
-        [tcall] TEXT NOT NULL,
-        [tcat] TEXT NOT NULL,
-        [tsec] TEXT NOT NULL,
         [ocall] TEXT NOT NULL,
         [ocat] TEXT NOT NULL,
-        [osec] TEXT NOT NULL) ''')
+        [osec] TEXT NOT NULL,
+        [tcall] TEXT NOT NULL,
+        [tcat] TEXT NOT NULL,
+        [tsec] TEXT NOT NULL)
+        ''')
+
     cur.execute('''CREATE TABLE IF NOT EXISTS station
         ([callsign] TEXT, [category] TEXT, [section] TEXT) ''')
 
@@ -92,17 +94,11 @@ def create_db():
 
 def contesting():
     """ Get qso details and write them to the database."""
-    cur.execute("SELECT callsign FROM station")
-    ocall = cur.fetchone()[0]
+    cur.execute("SELECT callsign, category, section FROM station")
+    ocall, ocat, osec = cur.fetchone()[0]
 
-    cur.execute("SELECT category FROM station")
-    ocat = cur.fetchone()[0]
-
-    cur.execute("SELECT section FROM station")
-    osec = cur.fetchone()[0]
-
-    utcdate = (str(datetime.utcnow().date()))
-    utctime = (str(datetime.utcnow().strftime('%H%M')))
+    utcdate = str(datetime.utcnow().date())
+    utctime = str(datetime.utcnow().strftime('%H%M'))
     tcall = input("Their Callsign: ").upper()
 
     """ Let's see if we can detect no input and use that as an exit criteria"""
