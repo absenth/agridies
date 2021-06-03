@@ -11,13 +11,12 @@ unless specifically overridden by user input orif we get hamlib/rigctl working
 
 from datetime import datetime
 from db_utils import db_connect
+from rig_utils import get_riginfo
 
 """ Set global variables for all the things that need them. """
 year = str(datetime.utcnow().year)
 dbname = (f"fielddaylog-{year}.db")
 settings = (f"fielddaylog-{year}.settings")
-band = ("14.250")  # FIXME When hamlib works
-mode = ("PH")  # FIXME When hamlib works
 
 """ setup database extractions """
 con = db_connect()
@@ -94,7 +93,7 @@ def create_db():
     """ Create our database & Table"""
     cur.execute('''CREATE TABLE IF NOT EXISTS qso
         ([qso] INTEGER PRIMARY KEY NOT NULL, [utcdate] TEXT, [utctime] TEXT,
-        [band] TEXT, [mode] TEXT,
+        [mode] TEXT, [band] TEXT,
         [ocall] TEXT NOT NULL,
         [ocat] TEXT NOT NULL,
         [osec] TEXT NOT NULL,
@@ -113,6 +112,9 @@ def contesting():
     """ Get qso details and write them to the database."""
     cur.execute("SELECT callsign, category, section FROM station")
     ocall, ocat, osec = cur.fetchall()[0]
+
+    """ get band and mode data from rig """
+    band, mode = get_riginfo()
 
     utcdate = str(datetime.utcnow().date())
     utctime = str(datetime.utcnow().strftime('%H%M'))
@@ -136,6 +138,7 @@ def contesting():
     qso = (utcdate, utctime, band, mode, ocall, ocat, osec, tcall, tcat, tsec)
 
     create_qso(con, qso)
+    print("")
     return True
 
 
@@ -152,19 +155,19 @@ def create_qso(con, qso):
 def showlogs(con):
     """ Function to display all logs"""
     cur.execute("SELECT * FROM qso")
-    print(con.fetchall())
-    # FIXME - This is broken
+    qsos = cur.fetchall()
+
+    for row in qsos:
+        print(row)
 
 
-'''
-def rigctlsetup():
-    #do rigcontrol setup
-
+"""
+We still need to setup the export logs feature.
 
 def exportlogs():
     #create cabrillo format export of logs
     #maybe we put this in a separate script too?
-'''
+"""
 
 
 if __name__ == "__main__":
