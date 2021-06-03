@@ -13,4 +13,4 @@ def get_riginfo():
     band = subprocess.run(['rigctl', '-m ' + model, '-r ' + rig, 'f'],
                           capture_output=True, text=True).stdout
 
-    return(mode.splitlines()[0], band)
+    return(mode.splitlines()[0], band.splitlines()[0])
