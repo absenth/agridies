@@ -84,8 +84,8 @@ def write_settings():
     if not category_check(ocat):
         ocat = input("What is your field day Category?: ").upper()
     osec = input("What is your section: ").upper()
-    osec = input("What is your ARRL Section?: ").upper()
 
+    print(f"Our Call is: {ocall}, Our Cat is: {ocat}, Our Sec is: {osec}")
     settings = (ocall, ocat, osec)
     create_settings(con, settings)
 
@@ -112,7 +112,7 @@ def create_db():
 def contesting():
     """ Get qso details and write them to the database."""
     cur.execute("SELECT callsign, category, section FROM station")
-    ocall, ocat, osec = cur.fetchone()[0]
+    ocall, ocat, osec = cur.fetchall()[0]
 
     utcdate = str(datetime.utcnow().date())
     utctime = str(datetime.utcnow().strftime('%H%M'))
@@ -136,6 +136,7 @@ def contesting():
     qso = (utcdate, utctime, band, mode, ocall, ocat, osec, tcall, tcat, tsec)
 
     create_qso(con, qso)
+    return True
 
 
 def create_qso(con, qso):
