@@ -4,13 +4,23 @@ This should ask the user on starup if they need to run the initial setup
 scripts.  Perhaps we can check for the existance of a SQLite3 database for this
 year and if it exists defaut to no, if it doesn't exist default to yes?
 
-After initial setup, this should take input of "tcall, tcat, tsec" as well
-as "band and mode" which after entered should default to the previous values
-unless specifically overridden by user input orif we get hamlib/rigctl working
+After setup this should take input of "their_call, their_cat, their_sec"
+as well as "band and mode" read from the transceiver via rigctl.
 """
 
 from datetime import datetime
-from db_utils import db_connect
+from db_utils import (
+        db_connect,
+        show_all_qso,
+        create_qso,
+        export_cabrillo_log)
+
+from fd_setup import (
+        check_for_agridies_database,
+        check_for_station_settings,
+        configure_agridies_database,
+        write_settings)
+
 from rig_utils import get_riginfo
 
 """ Set global variables for all the things that need them. """
@@ -28,38 +38,14 @@ print(f"Have a great {year} Field day!\n\n")
 
 def main():
     """ setup main function """
-    if not has_db():
-        create_db()
+    if not check_for_agridies_database():
+        configure_agridies_database()
 
-    if not has_settings():
+    if not check_for_station_settings():
         write_settings()
 
     while contesting():
         pass
-
-
-def has_db():
-    """ Check for this year's Database """
-    cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
-    print(cur.fetchall())  # FIXME - add if logic here for qso/settings
-
-
-def has_settings():
-    """ Check for this year's Station Details """
-    cur.execute("SELECT callsign FROM station")
-    ocall = cur.fetchone()
-    if ocall is not None:
-        print(f"Have a great field day {ocall}!")
-        return True
-
-
-def create_settings(con, settings):
-    """ Function for actually writing station details """
-    sql = ''' INSERT INTO station(callsign, category, section)
-              VALUES(?, ?, ?) '''
-    cur.execute(sql, settings)
-    con.commit()
-    return cur.lastrowid
 
 
 def category_check(valueToCheck):
@@ -76,98 +62,41 @@ def category_check(valueToCheck):
     return equals
 
 
-def write_settings():
-    """ Function to collect station details and push them to the db """
-    ocall = input("What is your station callsign: ").upper()
-    ocat = input("What is your category: ").upper()
-    if not category_check(ocat):
-        ocat = input("What is your field day Category?: ").upper()
-    osec = input("What is your section: ").upper()
-
-    print(f"Our Call is: {ocall}, Our Cat is: {ocat}, Our Sec is: {osec}")
-    settings = (ocall, ocat, osec)
-    create_settings(con, settings)
-
-
-def create_db():
-    """ Create our database & Table"""
-    cur.execute('''CREATE TABLE IF NOT EXISTS qso
-        ([qso] INTEGER PRIMARY KEY NOT NULL, [utcdate] TEXT, [utctime] TEXT,
-        [mode] TEXT, [band] TEXT,
-        [ocall] TEXT NOT NULL,
-        [ocat] TEXT NOT NULL,
-        [osec] TEXT NOT NULL,
-        [tcall] TEXT NOT NULL,
-        [tcat] TEXT NOT NULL,
-        [tsec] TEXT NOT NULL)
-        ''')
-
-    cur.execute('''CREATE TABLE IF NOT EXISTS station
-        ([callsign] TEXT, [category] TEXT, [section] TEXT) ''')
-
-    print(f"Created Database {dbname}")
-
-
 def contesting():
     """ Get qso details and write them to the database."""
     cur.execute("SELECT callsign, category, section FROM station")
-    ocall, ocat, osec = cur.fetchall()[0]
+    our_call, our_cat, our_sec = cur.fetchall()[0]
 
     """ get band and mode data from rig """
     band, mode = get_riginfo()
 
     utcdate = str(datetime.utcnow().date())
     utctime = str(datetime.utcnow().strftime('%H%M'))
-    tcall = input("Their Callsign: ").upper()
+    their_call = input("Their Callsign: ").upper()
 
     """ Let's see if we can detect no input and use that as an exit criteria"""
-    if not tcall:
+    if not their_call:
         print("You didn't enter a callsign.  Do you want to exit?")
         exit = input("YES or NO: ").upper()
         if (exit) == "YES":
             return False
         elif(exit) == "NO":
-            tcall = input("Their Callsign: ").upper()
+            their_call = input("Their Callsign: ").upper()
         else:
             print(f"I'm not sure what {exit} is, but I'm exiting anyway.")
             return False
 
-    tcat = input("Their Category: ").upper()
-    tsec = input("Their Section: ").upper()
+    their_cat = input("Their Category: ").upper()
+    their_sec = input("Their Section: ").upper()
 
-    qso = (utcdate, utctime, band, mode, ocall, ocat, osec, tcall, tcat, tsec)
+    if not category_check(their_cat):
+        their_cat = input("Their Category: ").upper()
+
+    qso = (utcdate, utctime, band, mode, their_call, their_cat, their_sec)
 
     create_qso(con, qso)
     print("")
     return True
-
-
-def create_qso(con, qso):
-    """ Function for actually writing qso entries, called by getqso()"""
-    sql = ''' INSERT INTO qso(utcdate, utctime, band, mode,
-                ocall, ocat, osec, tcall, tcat, tsec)
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?) '''
-    cur.execute(sql, qso)
-    con.commit()
-    return cur.lastrowid
-
-
-def showlogs(con):
-    """ Function to display all logs"""
-    cur.execute("SELECT * FROM qso")
-    qsos = cur.fetchall()
-
-    for row in qsos:
-        print(row)
-
-
-"""
-We still need to setup the export logs feature.
-
-def exportlogs():
-    #create cabrillo format export of logs
-    #maybe we put this in a separate script too?
-"""
 
 
 if __name__ == "__main__":
