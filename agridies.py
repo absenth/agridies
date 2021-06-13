@@ -1,6 +1,6 @@
 
 
-"""
+""" 
 This should serve as the primary mechasim for entering logs on field day
 This should ask the user on starup if they need to run the initial setup
 scripts.  Perhaps we can check for the existance of a SQLite3 database for this
