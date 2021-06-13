@@ -64,7 +64,7 @@ class adjustSettings(npyscreen.ActionForm):
         self.Ocat = self.add(npyscreen.TitleText, name='Enter your category here')
         self.Ocall = self.add(npyscreen.TitleText, name='Enter your station callsign')
         self.Osec = self.add(npyscreen.TitleText, name='Enter your section')
-        if not category_check(Ocat.upper()):  #here we can also implement other validity checks
+        if not category_check(self.Ocat.upper()):  #here we can also implement other validity checks
             self.Ocat.value. = 'You entered a wrong value. Please try anew'
             
         
@@ -80,23 +80,41 @@ class adjustSettings(npyscreen.ActionForm):
 class mainDisplay(npyscreen.Form):
 
     def afterEditing(self):
-        self.parentApp.setNextForm(self.parentApp.settingsVar)  #if somebody enters the ok key, he can readjust settings
+        #the nearest thing i found to a while loop in this context. It calls contesting upon the
+        #values you entered every time you hit the ok button
+            def contesting():
+                """ Get qso details and write them to the database."""
+                cur.execute("SELECT callsign, category, section FROM station")
+                ocall, ocat, osec = cur.fetchall()[0]
+
+                """ get band and mode data from rig """
+                band, mode = get_riginfo()
+
+                utcdate = str(datetime.utcnow().date())
+                utctime = str(datetime.utcnow().strftime('%H%M'))
+                tcall = self.Tcall.value.upper()
+                tcat = self.Tcat.value.upper()
+                tsec = self.Tsec.value.upper()
+
+                qso = (utcdate, utctime, band, mode, ocall, ocat, osec, tcall, tcat, tsec)
+
+                create_qso(con, qso)
+            contesting()
+
     def create(self):
         self.displayValue = entries
-        self.Entries = self.add(npyscreen.MultiLineEditableBoxed, name='Entries', values = entries, editable=False, max_height=15, rely=9)
-        self.Ocat   = self.add(npyscreen.TitleText, name='Your category', editable=False)
-        self.Ocall   = self.add(npyscreen.TitleText, name='Your callsign', editable=False)
-        self.Osec  = self.add(npyscreen.TitleText, name='Your section',editable=False)
+        self.Band        = self.add(npyscreen.TitleText, name='Band:')
+        self.Mode        = self.add(npyscreen.TitleText, name='Mode:')
+        self.Entries     = self.add(npyscreen.MultiLineEditableBoxed, name='Entries', values = entries, editable=False, max_height=15, rely=9)
+        self.Ocat        = self.add(npyscreen.TitleText, name='Your category', editable=False)
+        self.Ocall       = self.add(npyscreen.TitleText, name='Your callsign', editable=False)
+        self.Osec        = self.add(npyscreen.TitleText, name='Your section',editable=False)
 
-        self.Tcat   = self.add(npyscreen.TitleText, name='Enter their category',editable=True)
-        self.Tcall   = self.add(npyscreen.TitleText, name='Enter their callsign',editable=True)
-        self.Tsec   = self.add(npyscreen.TitleText, name='Enter their section',editable=True)
-
-
-    
-    
-    
-    
+        self.Tcat        = self.add(npyscreen.TitleText, name='Enter their category',editable=True)
+        self.Tcall       = self.add(npyscreen.TitleText, name='Enter their callsign',editable=True)
+        self.Tsec        = self.add(npyscreen.TitleText, name='Enter their section',editable=True)
+        
+        self.Band.value, self.Mode.value = get_riginfo() 
 
 def has_db():
     """ Check for this year's Database """
@@ -154,40 +172,6 @@ def create_db():
         ([callsign] TEXT, [category] TEXT, [section] TEXT) ''')
 
     print(f"Created Database {dbname}")
-
-
-def contesting():
-    """ Get qso details and write them to the database."""
-    cur.execute("SELECT callsign, category, section FROM station")
-    ocall, ocat, osec = cur.fetchall()[0]
-
-    """ get band and mode data from rig """
-    band, mode = get_riginfo()
-
-    utcdate = str(datetime.utcnow().date())
-    utctime = str(datetime.utcnow().strftime('%H%M'))
-    tcall = input("Their Callsign: ").upper()
-
-    """ Let's see if we can detect no input and use that as an exit criteria"""
-    if not tcall:
-        print("You didn't enter a callsign.  Do you want to exit?")
-        exit = input("YES or NO: ").upper()
-        if (exit) == "YES":
-            return False
-        elif(exit) == "NO":
-            tcall = input("Their Callsign: ").upper()
-        else:
-            print(f"I'm not sure what {exit} is, but I'm exiting anyway.")
-            return False
-
-    tcat = input("Their Category: ").upper()
-    tsec = input("Their Section: ").upper()
-
-    qso = (utcdate, utctime, band, mode, ocall, ocat, osec, tcall, tcat, tsec)
-
-    create_qso(con, qso)
-    print("")
-    return True
 
 
 def create_qso(con, qso):
