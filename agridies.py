@@ -8,13 +8,12 @@ After initial setup, this should take input of "tcall, tcat, tsec" as well
 as "band and mode" which after entered should default to the previous values
 unless specifically overridden by user input orif we get hamlib/rigctl working
 """
-
 from datetime import datetime
 from db_utils import db_connect
 from rig_utils import get_riginfo
 import npyscreen
 
-""" Set global variables for all the things that need them. """
+#Set global variables for all the things that need them. 
 year = str(datetime.utcnow().year)
 dbname = (f"fielddaylog-{year}.db")
 settings = (f"fielddaylog-{year}.settings")
@@ -60,7 +59,7 @@ class adjustSettings(npyscreen.ActionForm):
         #asking for the different settings we need
         self.displayValue = show_last_ten_logs()  #the last ten log. Note that they are treated as an array, so passing
         #a raw string to them will lead to strange results
-        self.Entries = self.add(npyscreen.MultiLineEditableBoxed, name='Entries', values = entries, editable=False, max_height=15, rely=9)
+        self.Entries = self.add(npyscreen.MultiLineEditableBoxed, name='Entries', values = self.displayValue, editable=False, max_height=15, rely=9)
         self.Ocat = self.add(npyscreen.TitleText, name='Enter your category here')
         self.Ocall = self.add(npyscreen.TitleText, name='Enter your station callsign')
         self.Osec = self.add(npyscreen.TitleText, name='Enter your section')
@@ -73,7 +72,6 @@ class adjustSettings(npyscreen.ActionForm):
             self.parentApp.Ocat = self.Ocat
             self.parentApp.Ocall = self.Ocall
             self.parentApp.Osec = self.Osec
-            global settings
             settings = (self.Ocall, self.Ocat, self.Osec)
             create_settings(con, settings)
 
@@ -84,30 +82,30 @@ class mainDisplay(npyscreen.Form):
         #the nearest thing i found to a while loop in this context. It calls contesting upon the
         #values you entered every time you hit the ok button
         #to quit, you simply press ctrl-c. I might also implement a quit yes/no checkbox if wished, or smth of this kind
-            def contesting():
-                """ Get qso details and write them to the database."""
-                cur.execute("SELECT callsign, category, section FROM station")
-                ocall, ocat, osec = cur.fetchall()[0]
+        def contesting():
+            """ Get qso details and write them to the database."""
+            cur.execute("SELECT callsign, category, section FROM station")
+            ocall, ocat, osec = cur.fetchall()[0]
 
-                """ get band and mode data from rig """
-                band, mode = get_riginfo()
+            """ get band and mode data from rig """
+            band, mode = get_riginfo()
 
-                utcdate = str(datetime.utcnow().date())
-                utctime = str(datetime.utcnow().strftime('%H%M'))
-                tcall = self.Tcall.value.upper()
-                tcat = self.Tcat.value.upper()
-                tsec = self.Tsec.value.upper()
+            utcdate = str(datetime.utcnow().date())
+            utctime = str(datetime.utcnow().strftime('%H%M'))
+            tcall = self.Tcall.value.upper()
+            tcat = self.Tcat.value.upper()
+            tsec = self.Tsec.value.upper()
 
-                qso = (utcdate, utctime, band, mode, ocall, ocat, osec, tcall, tcat, tsec)
+            qso = (utcdate, utctime, band, mode, ocall, ocat, osec, tcall, tcat, tsec)
 
-                create_qso(con, qso)
-            contesting()
+            create_qso(con, qso)
+        contesting()
 
     def create(self):
         self.displayValue = show_last_ten_logs()
         self.Band        = self.add(npyscreen.TitleText, name='Band:')
         self.Mode        = self.add(npyscreen.TitleText, name='Mode:')
-        self.Entries     = self.add(npyscreen.MultiLineEditableBoxed, name='Entries', values = entries, editable=False, max_height=15, rely=9)
+        self.Entries     = self.add(npyscreen.MultiLineEditableBoxed, name='Entries', values = self.displayValue, editable=False, max_height=15, rely=9)
         self.Ocat        = self.add(npyscreen.TitleText, name='Your category', editable=False) #these values shouldnt be edited
         self.Ocall       = self.add(npyscreen.TitleText, name='Your callsign', editable=False)
         self.Osec        = self.add(npyscreen.TitleText, name='Your section',editable=False)
@@ -120,13 +118,13 @@ class mainDisplay(npyscreen.Form):
         
         
 def write_settings(Ocall, Ocat, Osec):
-        """ Function to collect station details and push them to the db """
-        ocall = Ocall
-        ocat = Ocat
-        osec = Osec
+    """ Function to collect station details and push them to the db """
+    ocall = Ocall
+    ocat = Ocat
+    osec = Osec
 
-        settings = (ocall, ocat, osec)
-        create_settings(con, settings)
+    settings = (ocall, ocat, osec)
+    create_settings(con, settings)
     
 def has_db():
     """ Check for this year's Database """
@@ -194,16 +192,16 @@ def create_qso(con, qso):
     return cur.lastrowid
 
 
-#i was not sure if this function was still needed. If yes, i might try toimplement some kind of keystroke for viewing all
+#i was not sure if this function was still needed. If yes, i might try to implement some kind of keystroke for viewing all
 #logs. In the current format, it does not work
-'''def showlogs(con):   
+def showlogs(con):   
     """ Function to display all logs"""
     cur.execute("SELECT * FROM qso")
     qsos = cur.fetchall()
     for row in qsos:
-        print(row)'''
+        print(row)
 
-def show_last_ten_logs(con):
+def show_last_ten_logs():
     entries = []
     cur.execute('SELECT column FROM qso LIMIT 10')
     qsos = cur.fetchall()
@@ -222,4 +220,3 @@ def exportlogs():
 
 if __name__ == "__main__":
     main()
-
