@@ -1,6 +1,4 @@
 
-
-
 """
 This should serve as the primary mechasim for entering logs on field day
 This should ask the user on starup if they need to run the initial setup
@@ -27,7 +25,7 @@ cur = con.cursor()
 
 
 def main():
-    # setup main function 
+    # setup main function
     if not has_db():
         create_db()
     Application().run()  # starts the application
@@ -35,55 +33,55 @@ def main():
 
 class Application(npyscreen.NPSAppManaged):
     def onStart(self):
-        if not has_settings():   
+        if not has_settings():
             '''checking whether there are any settings yet,
              if not, prompt a settings window'''
 
             message = 'Welcome to agridies log'
             self.addForm('MAIN', adjustSettings, name=message)
             self.addForm('SECONDARY', mainDisplay, name=message)
-        else: 
+        else:
             self.addForm('MAIN', mainDisplay, name=message)
             self.addForm('SECONDARY', adjustSettings, name=message)
 
 
 class adjustSettings(npyscreen.ActionForm):
-    def afterEditing(self):  
+    def afterEditing(self):
         # used to access the other form
-        getF = self.parentApp.getForm('SECONDARY')   
-        getF.Ocat.value = self.Ocat.value.upper() 
+        getF = self.parentApp.getForm('SECONDARY')
+        getF.Ocat.value = self.Ocat.value.upper()
         #  after the editing is finished, that is,
         #  when sbdy presses the ok button,
         #  we want to transfer these values to the main display
         getF.Ocall.value = self.Ocall.value.upper()
         getF.Osec.value = self.Osec.value.upper()
-        
+
         if category_check(self.Ocat.upper):
             self.parentApp.setNextForm('SECONDARY')
             # write the settings
-            write_settings(self.Ocall.value.upper(), 
-                           self.Ocat.value.upper(), self.Osec.value.upper())  
+            write_settings(self.Ocall.value.upper(),
+                           self.Ocat.value.upper(), self.Osec.value.upper())
             # to the database
         else:
-            self.Ocat.value = "You entered a wrong value. Please try again"  
-        
+            self.Ocat.value = "You entered a wrong value. Please try again"
+
     def create(self):
         text = npyscreen.TitleText
         # asking for the different settings we need
-        self.displayValue = show_last_ten_logs()  
+        self.displayValue = show_last_ten_logs()
         '''the last ten log. Note that they are treated as an array, so passing
         a raw string to them will lead to strange results'''
         self.Entries = self.add(npyscreen.MultiLineEditableBoxed,
                                 name='Entries',
-                                values=self.displayValue, editable=False, 
+                                values=self.displayValue, editable=False,
                                 max_height=15, rely=9)
         self.Ocat = self.add(text, name='Enter your category here')
         self.Ocall = self.add(text, name='Enter your station callsign')
         self.Osec = self.add(text, name='Enter your section')
-        
+
         if not category_check(self.Ocat.upper()):  # validity checks
             self.Ocat.value = 'You entered a wrong value. Please try anew'
-                 
+
         else:
             self.parentApp.Ocat = self.Ocat
             self.parentApp.Ocall = self.Ocall
@@ -98,7 +96,7 @@ class mainDisplay(npyscreen.Form):
         '''the nearest thing i found to a while loop in this context.
         It calls contesting upon the
         values you entered every time you hit the ok button
-        to quit, you simply press ctrl-c. I might also implement 
+        to quit, you simply press ctrl-c. I might also implement
         a quit yes/no checkbox, or smth of this kind'''
         def contesting():
             """ Get qso details and write them to the database."""
@@ -125,7 +123,7 @@ class mainDisplay(npyscreen.Form):
         self.displayValue = show_last_ten_logs()
         self.Band = self.add(text, name='Band:')
         self.Mode = self.add(text, name='Mode:')
-        self.Entries = self.add(npyscreen.MultiLineEditableBoxed, 
+        self.Entries = self.add(npyscreen.MultiLineEditableBoxed,
                                 name='Entries', values=self.displayValue,
                                 editable=False, max_height=15, rely=9)
         self.Ocat = self.add(text, name='Your category',
@@ -136,10 +134,10 @@ class mainDisplay(npyscreen.Form):
         self.Tcat = self.add(text, name='Enter their category', editable=True)
         self.Tcall = self.add(text, name='Enter their callsign', editable=True)
         self.Tsec = self.add(text, name='Enter their section', editable=True)
-        
-        self.Band.value, self.Mode.value = get_riginfo() 
-        
-        
+
+        self.Band.value, self.Mode.value = get_riginfo()
+
+
 def write_settings(Ocall, Ocat, Osec):
     """ Function to collect station details and push them to the db """
     ocall = Ocall
@@ -148,7 +146,7 @@ def write_settings(Ocall, Ocat, Osec):
 
     settings = (ocall, ocat, osec)
     create_settings(con, settings)
-   
+
 
 def has_db():
     """ Check for this year's Database """
@@ -219,7 +217,7 @@ If yes, i might try to implement some kind of keystroke for viewing all
 logs. In the current format, it does not work'''
 
 
-def showlogs(con):  
+def showlogs(con):
     """ Function to display all logs"""
     cur.execute("SELECT * FROM qso")
     qsos = cur.fetchall()
@@ -231,7 +229,7 @@ def show_last_ten_logs():
     entries = []
     cur.execute('SELECT column FROM qso LIMIT 10')
     qsos = cur.fetchall()
-   
+
     for row in qsos:
         entries.append(row)
     return entries
