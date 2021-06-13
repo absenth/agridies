@@ -30,17 +30,10 @@ def main():
         create_db()
      MyApplication().run()
 
-    while contesting():
-        pass
-
     
 
-entries = ('DATE','TIME', 'OUR CALL', 'CATEGORY', 'SECTION', 'HIS CALL', 'HIS CATEGORY', 'HIS SECTION', 'Second', 'Third', 'Fourth')
-def has_settings():
-    return False
 class MyApplication(npyscreen.NPSAppManaged):
     def onStart(self):
-        Ocall, Ocat, Osec,Tcall, Tcat, Tsec = None,None,None,None,None,None
         if not has_settings():   #checking whether there are any settings, if not, prompt a settings window
             self.addForm('MAIN', adjustSettings, name="Welcome to agridies log")
             self.addForm('SECONDARY', mainDisplay, name='Welcome to agridies log')
@@ -51,19 +44,24 @@ class MyApplication(npyscreen.NPSAppManaged):
 
 class adjustSettings(npyscreen.ActionForm):
     def afterEditing(self):  #Only way to access values through different forms
-        self.parentApp.setNextForm('SECONDARY')
         self.parentApp.getForm('SECONDARY').Ocat.value = self.Ocat.value.upper()
         self.parentApp.getForm('SECONDARY').Ocall.value = self.Ocall.value.upper()
         self.parentApp.getForm('SECONDARY').Osec.value = self.Osec.value.upper()
-
+        
+        if category_check(self.Ocat.upper):
+            self.parentApp.setNextForm('SECONDARY')
+            write_settings(self.Ocall.value.upper(), self.Ocat.value.upper(), self.Osec.value.upper())
+        else:
+            self.Ocat.value = "You entered a wrong value. Please try again"
         
     def create(self):
         #asking for the different settings we need
-        self.displayValue = entries
+        self.displayValue = show_last_ten_logs()
         self.Entries = self.add(npyscreen.MultiLineEditableBoxed, name='Entries', values = entries, editable=False, max_height=15, rely=9)
         self.Ocat = self.add(npyscreen.TitleText, name='Enter your category here')
         self.Ocall = self.add(npyscreen.TitleText, name='Enter your station callsign')
         self.Osec = self.add(npyscreen.TitleText, name='Enter your section')
+        
         if not category_check(self.Ocat.upper()):  #here we can also implement other validity checks
             self.Ocat.value. = 'You entered a wrong value. Please try anew'
             
@@ -102,7 +100,7 @@ class mainDisplay(npyscreen.Form):
             contesting()
 
     def create(self):
-        self.displayValue = entries
+        self.displayValue = show_last_ten_logs()
         self.Band        = self.add(npyscreen.TitleText, name='Band:')
         self.Mode        = self.add(npyscreen.TitleText, name='Mode:')
         self.Entries     = self.add(npyscreen.MultiLineEditableBoxed, name='Entries', values = entries, editable=False, max_height=15, rely=9)
@@ -115,7 +113,17 @@ class mainDisplay(npyscreen.Form):
         self.Tsec        = self.add(npyscreen.TitleText, name='Enter their section',editable=True)
         
         self.Band.value, self.Mode.value = get_riginfo() 
+        
+        
+ def write_settings(Ocall, Ocat, Osec):
+    """ Function to collect station details and push them to the db """
+    ocall = Ocall
+    ocat = Ocat
+    osec = Osec
 
+    settings = (ocall, ocat, osec)
+    create_settings(con, settings)
+    
 def has_db():
     """ Check for this year's Database """
     cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -171,8 +179,6 @@ def create_db():
     cur.execute('''CREATE TABLE IF NOT EXISTS station
         ([callsign] TEXT, [category] TEXT, [section] TEXT) ''')
 
-    print(f"Created Database {dbname}")
-
 
 def create_qso(con, qso):
     """ Function for actually writing qso entries, called by getqso()"""
@@ -192,6 +198,14 @@ def showlogs(con):
     for row in qsos:
         print(row)
 
+def show_last_ten_logs(con):
+    entries = []
+    cur.execute('SELECT column FROM qso LIMIT 10')
+    qsos = cur.fetchall()
+    
+    for row in qsos:
+        entries.append(row)
+    return entries
 
 """
 We still need to setup the export logs feature.
