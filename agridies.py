@@ -1,9 +1,9 @@
+
 """
 This should serve as the primary mechasim for entering logs on field day
 This should ask the user on starup if they need to run the initial setup
 scripts.  Perhaps we can check for the existance of a SQLite3 database for this
 year and if it exists defaut to no, if it doesn't exist default to yes?
-
 After initial setup, this should take input of "tcall, tcat, tsec" as well
 as "band and mode" which after entered should default to the previous values
 unless specifically overridden by user input orif we get hamlib/rigctl working
@@ -28,7 +28,7 @@ def main():
     """ setup main function """
     if not has_db():
         create_db()
-     Application().run()  #starts the application
+    Application().run()  #starts the application
 
     
 
@@ -66,7 +66,7 @@ class adjustSettings(npyscreen.ActionForm):
         self.Osec = self.add(npyscreen.TitleText, name='Enter your section')
         
         if not category_check(self.Ocat.upper()):  #here we can also implement other validity checks
-            self.Ocat.value. = 'You entered a wrong value. Please try anew'
+            self.Ocat.value = 'You entered a wrong value. Please try anew'
             
         
         else:
@@ -119,14 +119,14 @@ class mainDisplay(npyscreen.Form):
         self.Band.value, self.Mode.value = get_riginfo() 
         
         
- def write_settings(Ocall, Ocat, Osec):
-    """ Function to collect station details and push them to the db """
-    ocall = Ocall
-    ocat = Ocat
-    osec = Osec
+def write_settings(Ocall, Ocat, Osec):
+        """ Function to collect station details and push them to the db """
+        ocall = Ocall
+        ocat = Ocat
+        osec = Osec
 
-    settings = (ocall, ocat, osec)
-    create_settings(con, settings)
+        settings = (ocall, ocat, osec)
+        create_settings(con, settings)
     
 def has_db():
     """ Check for this year's Database """
@@ -200,7 +200,6 @@ def create_qso(con, qso):
     """ Function to display all logs"""
     cur.execute("SELECT * FROM qso")
     qsos = cur.fetchall()
-
     for row in qsos:
         print(row)'''
 
@@ -215,7 +214,6 @@ def show_last_ten_logs(con):
 
 """
 We still need to setup the export logs feature.
-
 def exportlogs():
     #create cabrillo format export of logs
     #maybe we put this in a separate script too?
@@ -224,3 +222,4 @@ def exportlogs():
 
 if __name__ == "__main__":
     main()
+
