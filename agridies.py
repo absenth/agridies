@@ -28,13 +28,13 @@ def main():
     """ setup main function """
     if not has_db():
         create_db()
-     MyApplication().run()
+     Application().run()  #starts the application
 
     
 
-class MyApplication(npyscreen.NPSAppManaged):
+class Application(npyscreen.NPSAppManaged):
     def onStart(self):
-        if not has_settings():   #checking whether there are any settings, if not, prompt a settings window
+        if not has_settings():   #checking whether there are any settings yet, if not, prompt a settings window
             self.addForm('MAIN', adjustSettings, name="Welcome to agridies log")
             self.addForm('SECONDARY', mainDisplay, name='Welcome to agridies log')
         else: 
@@ -43,20 +43,23 @@ class MyApplication(npyscreen.NPSAppManaged):
 
 
 class adjustSettings(npyscreen.ActionForm):
-    def afterEditing(self):  #Only way to access values through different forms
-        self.parentApp.getForm('SECONDARY').Ocat.value = self.Ocat.value.upper()
+    def afterEditing(self):  
+        self.parentApp.getForm('SECONDARY').Ocat.value = self.Ocat.value.upper() #after the editing is finished,
+        #that is, when sbdy presses the ok button, we want to transfer these values to the main display
         self.parentApp.getForm('SECONDARY').Ocall.value = self.Ocall.value.upper()
         self.parentApp.getForm('SECONDARY').Osec.value = self.Osec.value.upper()
         
         if category_check(self.Ocat.upper):
             self.parentApp.setNextForm('SECONDARY')
-            write_settings(self.Ocall.value.upper(), self.Ocat.value.upper(), self.Osec.value.upper())
+            write_settings(self.Ocall.value.upper(), self.Ocat.value.upper(), self.Osec.value.upper()) #write the settings
+            #to the database
         else:
-            self.Ocat.value = "You entered a wrong value. Please try again"
+            self.Ocat.value = "You entered a wrong value. Please try again"  
         
     def create(self):
         #asking for the different settings we need
-        self.displayValue = show_last_ten_logs()
+        self.displayValue = show_last_ten_logs()  #the last ten log. Note that they are treated as an array, so passing
+        #a raw string to them will lead to strange results
         self.Entries = self.add(npyscreen.MultiLineEditableBoxed, name='Entries', values = entries, editable=False, max_height=15, rely=9)
         self.Ocat = self.add(npyscreen.TitleText, name='Enter your category here')
         self.Ocall = self.add(npyscreen.TitleText, name='Enter your station callsign')
@@ -80,6 +83,7 @@ class mainDisplay(npyscreen.Form):
     def afterEditing(self):
         #the nearest thing i found to a while loop in this context. It calls contesting upon the
         #values you entered every time you hit the ok button
+        #to quit, you simply press ctrl-c. I might also implement a quit yes/no checkbox if wished, or smth of this kind
             def contesting():
                 """ Get qso details and write them to the database."""
                 cur.execute("SELECT callsign, category, section FROM station")
@@ -104,7 +108,7 @@ class mainDisplay(npyscreen.Form):
         self.Band        = self.add(npyscreen.TitleText, name='Band:')
         self.Mode        = self.add(npyscreen.TitleText, name='Mode:')
         self.Entries     = self.add(npyscreen.MultiLineEditableBoxed, name='Entries', values = entries, editable=False, max_height=15, rely=9)
-        self.Ocat        = self.add(npyscreen.TitleText, name='Your category', editable=False)
+        self.Ocat        = self.add(npyscreen.TitleText, name='Your category', editable=False) #these values shouldnt be edited
         self.Ocall       = self.add(npyscreen.TitleText, name='Your callsign', editable=False)
         self.Osec        = self.add(npyscreen.TitleText, name='Your section',editable=False)
 
@@ -190,13 +194,15 @@ def create_qso(con, qso):
     return cur.lastrowid
 
 
-def showlogs(con):
+#i was not sure if this function was still needed. If yes, i might try toimplement some kind of keystroke for viewing all
+#logs. In the current format, it does not work
+'''def showlogs(con):   
     """ Function to display all logs"""
     cur.execute("SELECT * FROM qso")
     qsos = cur.fetchall()
 
     for row in qsos:
-        print(row)
+        print(row)'''
 
 def show_last_ten_logs(con):
     entries = []
