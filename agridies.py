@@ -12,6 +12,7 @@ unless specifically overridden by user input orif we get hamlib/rigctl working
 from datetime import datetime
 from db_utils import db_connect
 from rig_utils import get_riginfo
+import npyscreen
 
 """ Set global variables for all the things that need them. """
 year = str(datetime.utcnow().year)
@@ -22,21 +23,80 @@ settings = (f"fielddaylog-{year}.settings")
 con = db_connect()
 cur = con.cursor()
 
-print("Welcome to Agridies Log\n\n")
-print(f"Have a great {year} Field day!\n\n")
-
 
 def main():
     """ setup main function """
     if not has_db():
         create_db()
-
-    if not has_settings():
-        write_settings()
+     MyApplication().run()
 
     while contesting():
         pass
 
+    
+
+entries = ('DATE','TIME', 'OUR CALL', 'CATEGORY', 'SECTION', 'HIS CALL', 'HIS CATEGORY', 'HIS SECTION', 'Second', 'Third', 'Fourth')
+def has_settings():
+    return False
+class MyApplication(npyscreen.NPSAppManaged):
+    def onStart(self):
+        Ocall, Ocat, Osec,Tcall, Tcat, Tsec = None,None,None,None,None,None
+        if not has_settings():   #checking whether there are any settings, if not, prompt a settings window
+            self.addForm('MAIN', adjustSettings, name="Welcome to agridies log")
+            self.addForm('SECONDARY', mainDisplay, name='Welcome to agridies log')
+        else: 
+            self.addForm('MAIN', mainDisplay, name='Welcome to agridies log')
+            self.addForm('SECONDARY', adjustSettings, name='Welcome to agridies log')
+
+
+class adjustSettings(npyscreen.ActionForm):
+    def afterEditing(self):  #Only way to access values through different forms
+        self.parentApp.setNextForm('SECONDARY')
+        self.parentApp.getForm('SECONDARY').Ocat.value = self.Ocat.value.upper()
+        self.parentApp.getForm('SECONDARY').Ocall.value = self.Ocall.value.upper()
+        self.parentApp.getForm('SECONDARY').Osec.value = self.Osec.value.upper()
+
+        
+    def create(self):
+        #asking for the different settings we need
+        self.displayValue = entries
+        self.Entries = self.add(npyscreen.MultiLineEditableBoxed, name='Entries', values = entries, editable=False, max_height=15, rely=9)
+        self.Ocat = self.add(npyscreen.TitleText, name='Enter your category here')
+        self.Ocall = self.add(npyscreen.TitleText, name='Enter your station callsign')
+        self.Osec = self.add(npyscreen.TitleText, name='Enter your section')
+        if not category_check(Ocat.upper()):  #here we can also implement other validity checks
+            self.Ocat.value. = 'You entered a wrong value. Please try anew'
+            
+        
+        else:
+            self.parentApp.Ocat = self.Ocat
+            self.parentApp.Ocall = self.Ocall
+            self.parentApp.Osec = self.Osec
+            global settings
+            settings = (self.Ocall, self.Ocat, self.Osec)
+            create_settings(con, settings)
+
+
+class mainDisplay(npyscreen.Form):
+
+    def afterEditing(self):
+        self.parentApp.setNextForm(self.parentApp.settingsVar)  #if somebody enters the ok key, he can readjust settings
+    def create(self):
+        self.displayValue = entries
+        self.Entries = self.add(npyscreen.MultiLineEditableBoxed, name='Entries', values = entries, editable=False, max_height=15, rely=9)
+        self.Ocat   = self.add(npyscreen.TitleText, name='Your category', editable=False)
+        self.Ocall   = self.add(npyscreen.TitleText, name='Your callsign', editable=False)
+        self.Osec  = self.add(npyscreen.TitleText, name='Your section',editable=False)
+
+        self.Tcat   = self.add(npyscreen.TitleText, name='Enter their category',editable=True)
+        self.Tcall   = self.add(npyscreen.TitleText, name='Enter their callsign',editable=True)
+        self.Tsec   = self.add(npyscreen.TitleText, name='Enter their section',editable=True)
+
+
+    
+    
+    
+    
 
 def has_db():
     """ Check for this year's Database """
@@ -49,9 +109,7 @@ def has_settings():
     cur.execute("SELECT callsign FROM station")
     ocall = cur.fetchone()
     if ocall is not None:
-        print(f"Have a great field day {ocall}!")
         return True
-
 
 def create_settings(con, settings):
     """ Function for actually writing station details """
@@ -76,17 +134,7 @@ def category_check(valueToCheck):
     return equals
 
 
-def write_settings():
-    """ Function to collect station details and push them to the db """
-    ocall = input("What is your station callsign: ").upper()
-    ocat = input("What is your category: ").upper()
-    if not category_check(ocat):
-        ocat = input("What is your field day Category?: ").upper()
-    osec = input("What is your section: ").upper()
 
-    print(f"Our Call is: {ocall}, Our Cat is: {ocat}, Our Sec is: {osec}")
-    settings = (ocall, ocat, osec)
-    create_settings(con, settings)
 
 
 def create_db():
