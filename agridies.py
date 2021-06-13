@@ -1,6 +1,7 @@
 
 
-""" 
+
+"""
 This should serve as the primary mechasim for entering logs on field day
 This should ask the user on starup if they need to run the initial setup
 scripts.  Perhaps we can check for the existance of a SQLite3 database for this
@@ -10,10 +11,11 @@ as "band and mode" which after entered should default to the previous values
 unless specifically overridden by user input orif we get hamlib/rigctl working
 """
 
+import npyscreen
 from datetime import datetime
 from db_utils import db_connect
 from rig_utils import get_riginfo
-import npyscreen
+
 # Set global variables for all the things that need them.
 year = str(datetime.utcnow().year)
 dbname = (f"fielddaylog-{year}.db")
@@ -36,41 +38,50 @@ class Application(npyscreen.NPSAppManaged):
         if not has_settings():   
             '''checking whether there are any settings yet,
              if not, prompt a settings window'''
-            self.addForm('MAIN', adjustSettings, name='Welcome to agridies log')
-            self.addForm('SECONDARY', mainDisplay, name='Welcome to agridies log')
+
+            message = 'Welcome to agridies log'
+            self.addForm('MAIN', adjustSettings, name=message)
+            self.addForm('SECONDARY', mainDisplay, name=message)
         else: 
-            self.addForm('MAIN', mainDisplay, name='Welcome to agridies log')
-            self.addForm('SECONDARY', adjustSettings, name='Welcome to agridies log')
+            self.addForm('MAIN', mainDisplay, name=message)
+            self.addForm('SECONDARY', adjustSettings, name=message)
 
 
 class adjustSettings(npyscreen.ActionForm):
     def afterEditing(self):  
-        self.parentApp.getForm('SECONDARY').Ocat.value = self.Ocat.value.upper() 
-        #  after the editing is finished, that is, when sbdy presses the ok button,
+        # used to access the other form
+        getF = self.parentApp.getForm('SECONDARY')   
+        getF.Ocat.value = self.Ocat.value.upper() 
+        #  after the editing is finished, that is,
+        #  when sbdy presses the ok button,
         #  we want to transfer these values to the main display
-        self.parentApp.getForm('SECONDARY').Ocall.value = self.Ocall.value.upper()
-        self.parentApp.getForm('SECONDARY').Osec.value = self.Osec.value.upper()
+        getF.Ocall.value = self.Ocall.value.upper()
+        getF.Osec.value = self.Osec.value.upper()
         
         if category_check(self.Ocat.upper):
             self.parentApp.setNextForm('SECONDARY')
+            # write the settings
             write_settings(self.Ocall.value.upper(), 
-                           self.Ocat.value.upper(), self.Osec.value.upper())  # write the settings
+                           self.Ocat.value.upper(), self.Osec.value.upper())  
             # to the database
         else:
             self.Ocat.value = "You entered a wrong value. Please try again"  
         
     def create(self):
+        text = npyscreen.TitleText
         # asking for the different settings we need
         self.displayValue = show_last_ten_logs()  
         '''the last ten log. Note that they are treated as an array, so passing
         a raw string to them will lead to strange results'''
-        self.Entries = self.add(npyscreen.MultiLineEditableBoxed, name='Entries',
-                                values=self.displayValue, editable=False, max_height=15, rely=9)
-        self.Ocat = self.add(npyscreen.TitleText, name='Enter your category here')
-        self.Ocall = self.add(npyscreen.TitleText, name='Enter your station callsign')
-        self.Osec = self.add(npyscreen.TitleText, name='Enter your section')
+        self.Entries = self.add(npyscreen.MultiLineEditableBoxed,
+                                name='Entries',
+                                values=self.displayValue, editable=False, 
+                                max_height=15, rely=9)
+        self.Ocat = self.add(text, name='Enter your category here')
+        self.Ocall = self.add(text, name='Enter your station callsign')
+        self.Osec = self.add(text, name='Enter your section')
         
-        if not category_check(self.Ocat.upper()):  # here we can also implement other validity checks
+        if not category_check(self.Ocat.upper()):  # validity checks
             self.Ocat.value = 'You entered a wrong value. Please try anew'
                  
         else:
@@ -84,9 +95,11 @@ class adjustSettings(npyscreen.ActionForm):
 class mainDisplay(npyscreen.Form):
 
     def afterEditing(self):
-        '''the nearest thing i found to a while loop in this context. It calls contesting upon the
+        '''the nearest thing i found to a while loop in this context.
+        It calls contesting upon the
         values you entered every time you hit the ok button
-        to quit, you simply press ctrl-c. I might also implement a quit yes/no checkbox if wished, or smth of this kind'''
+        to quit, you simply press ctrl-c. I might also implement 
+        a quit yes/no checkbox, or smth of this kind'''
         def contesting():
             """ Get qso details and write them to the database."""
             cur.execute("SELECT callsign, category, section FROM station")
@@ -101,25 +114,28 @@ class mainDisplay(npyscreen.Form):
             tcat = self.Tcat.value.upper()
             tsec = self.Tsec.value.upper()
 
-            qso = (utcdate, utctime, band, mode, ocall, ocat, osec, tcall, tcat, tsec)
+            qso = (utcdate, utctime, band, mode,
+                   ocall, ocat, osec, tcall, tcat, tsec)
 
             create_qso(con, qso)
         contesting()
 
     def create(self):
+        text = npyscreen.TitleText
         self.displayValue = show_last_ten_logs()
-        self.Band = self.add(npyscreen.TitleText, name='Band:')
-        self.Mode = self.add(npyscreen.TitleText, name='Mode:')
+        self.Band = self.add(text, name='Band:')
+        self.Mode = self.add(text, name='Mode:')
         self.Entries = self.add(npyscreen.MultiLineEditableBoxed, 
-                                name='Entries', values=self.displayValue, editable=False, max_height=15, rely=9)
-        self.Ocat = self.add(npyscreen.TitleText, name='Your category',
+                                name='Entries', values=self.displayValue,
+                                editable=False, max_height=15, rely=9)
+        self.Ocat = self.add(text, name='Your category',
                              editable=False)  # these values shouldnt be edited
-        self.Ocall = self.add(npyscreen.TitleText, name='Your callsign', editable=False)
-        self.Osec = self.add(npyscreen.TitleText, name='Your section', editable=False)
+        self.Ocall = self.add(text, name='Your callsign', editable=False)
+        self.Osec = self.add(text, name='Your section', editable=False)
 
-        self.Tcat = self.add(npyscreen.TitleText, name='Enter their category', editable=True)
-        self.Tcall = self.add(npyscreen.TitleText, name='Enter their callsign', editable=True)
-        self.Tsec = self.add(npyscreen.TitleText, name='Enter their section', editable=True)
+        self.Tcat = self.add(text, name='Enter their category', editable=True)
+        self.Tcall = self.add(text, name='Enter their callsign', editable=True)
+        self.Tsec = self.add(text, name='Enter their section', editable=True)
         
         self.Band.value, self.Mode.value = get_riginfo() 
         
