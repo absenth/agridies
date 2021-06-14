@@ -1,19 +1,20 @@
+
 """
 This should serve as the primary mechasim for entering logs on field day
 This should ask the user on starup if they need to run the initial setup
 scripts.  Perhaps we can check for the existance of a SQLite3 database for this
 year and if it exists defaut to no, if it doesn't exist default to yes?
-
 After initial setup, this should take input of "tcall, tcat, tsec" as well
 as "band and mode" which after entered should default to the previous values
 unless specifically overridden by user input orif we get hamlib/rigctl working
 """
 
+import npyscreen
 from datetime import datetime
 from db_utils import db_connect
 from rig_utils import get_riginfo
 
-""" Set global variables for all the things that need them. """
+# Set global variables for all the things that need them.
 year = str(datetime.utcnow().year)
 dbname = (f"fielddaylog-{year}.db")
 settings = (f"fielddaylog-{year}.settings")
@@ -22,20 +23,129 @@ settings = (f"fielddaylog-{year}.settings")
 con = db_connect()
 cur = con.cursor()
 
-print("Welcome to Agridies Log\n\n")
-print(f"Have a great {year} Field day!\n\n")
-
 
 def main():
-    """ setup main function """
+    # setup main function
     if not has_db():
         create_db()
+    Application().run()  # starts the application
 
-    if not has_settings():
-        write_settings()
 
-    while contesting():
-        pass
+class Application(npyscreen.NPSAppManaged):
+    def onStart(self):
+        if not has_settings():
+            '''checking whether there are any settings yet,
+             if not, prompt a settings window'''
+
+            message = 'Welcome to agridies log'
+            self.addForm('MAIN', adjustSettings, name=message)
+            self.addForm('SECONDARY', mainDisplay, name=message)
+        else:
+            self.addForm('MAIN', mainDisplay, name=message)
+            self.addForm('SECONDARY', adjustSettings, name=message)
+
+
+class adjustSettings(npyscreen.ActionForm):
+    def afterEditing(self):
+        # used to access the other form
+        getF = self.parentApp.getForm('SECONDARY')
+        getF.Ocat.value = self.Ocat.value.upper()
+        #  after the editing is finished, that is,
+        #  when sbdy presses the ok button,
+        #  we want to transfer these values to the main display
+        getF.Ocall.value = self.Ocall.value.upper()
+        getF.Osec.value = self.Osec.value.upper()
+
+        if category_check(self.Ocat.upper):
+            self.parentApp.setNextForm('SECONDARY')
+            # write the settings
+            write_settings(self.Ocall.value.upper(),
+                           self.Ocat.value.upper(), self.Osec.value.upper())
+            # to the database
+        else:
+            self.Ocat.value = "You entered a wrong value. Please try again"
+
+    def create(self):
+        text = npyscreen.TitleText
+        # asking for the different settings we need
+        self.displayValue = show_last_ten_logs()
+        '''the last ten log. Note that they are treated as an array, so passing
+        a raw string to them will lead to strange results'''
+        self.Entries = self.add(npyscreen.MultiLineEditableBoxed,
+                                name='Entries',
+                                values=self.displayValue, editable=False,
+                                max_height=15, rely=9)
+        self.Ocat = self.add(text, name='Enter your category here')
+        self.Ocall = self.add(text, name='Enter your station callsign')
+        self.Osec = self.add(text, name='Enter your section')
+
+        if not category_check(self.Ocat.upper()):  # validity checks
+            self.Ocat.value = 'You entered a wrong value. Please try anew'
+
+        else:
+            self.parentApp.Ocat = self.Ocat
+            self.parentApp.Ocall = self.Ocall
+            self.parentApp.Osec = self.Osec
+            settings = (self.Ocall, self.Ocat, self.Osec)
+            create_settings(con, settings)
+
+
+class mainDisplay(npyscreen.Form):
+
+    def afterEditing(self):
+        '''the nearest thing i found to a while loop in this context.
+        It calls contesting upon the
+        values you entered every time you hit the ok button
+        to quit, you simply press ctrl-c. I might also implement
+        a quit yes/no checkbox, or smth of this kind'''
+        def contesting():
+            """ Get qso details and write them to the database."""
+            cur.execute("SELECT callsign, category, section FROM station")
+            ocall, ocat, osec = cur.fetchall()[0]
+
+            """ get band and mode data from rig """
+            band, mode = get_riginfo()
+
+            utcdate = str(datetime.utcnow().date())
+            utctime = str(datetime.utcnow().strftime('%H%M'))
+            tcall = self.Tcall.value.upper()
+            tcat = self.Tcat.value.upper()
+            tsec = self.Tsec.value.upper()
+
+            qso = (utcdate, utctime, band, mode,
+                   ocall, ocat, osec, tcall, tcat, tsec)
+
+            create_qso(con, qso)
+        contesting()
+
+    def create(self):
+        text = npyscreen.TitleText
+        self.displayValue = show_last_ten_logs()
+        self.Band = self.add(text, name='Band:')
+        self.Mode = self.add(text, name='Mode:')
+        self.Entries = self.add(npyscreen.MultiLineEditableBoxed,
+                                name='Entries', values=self.displayValue,
+                                editable=False, max_height=15, rely=9)
+        self.Ocat = self.add(text, name='Your category',
+                             editable=False)  # these values shouldnt be edited
+        self.Ocall = self.add(text, name='Your callsign', editable=False)
+        self.Osec = self.add(text, name='Your section', editable=False)
+
+        self.Tcat = self.add(text, name='Enter their category', editable=True)
+        self.Tcall = self.add(text, name='Enter their callsign', editable=True)
+        self.Tsec = self.add(text, name='Enter their section', editable=True)
+
+        self.Band.value, self.Mode.value = get_riginfo()
+
+
+def write_settings(Ocall, Ocat, Osec):
+    """ Function to collect station details and push them to the db """
+    ocall = Ocall
+    ocat = Ocat
+    osec = Osec
+
+    settings = (ocall, ocat, osec)
+    create_settings(con, settings)
 
 
 def has_db():
@@ -49,7 +159,6 @@ def has_settings():
     cur.execute("SELECT callsign FROM station")
     ocall = cur.fetchone()
     if ocall is not None:
-        print(f"Have a great field day {ocall}!")
         return True
 
 
@@ -76,19 +185,6 @@ def category_check(valueToCheck):
     return equals
 
 
-def write_settings():
-    """ Function to collect station details and push them to the db """
-    ocall = input("What is your station callsign: ").upper()
-    ocat = input("What is your category: ").upper()
-    if not category_check(ocat):
-        ocat = input("What is your field day Category?: ").upper()
-    osec = input("What is your section: ").upper()
-
-    print(f"Our Call is: {ocall}, Our Cat is: {ocat}, Our Sec is: {osec}")
-    settings = (ocall, ocat, osec)
-    create_settings(con, settings)
-
-
 def create_db():
     """ Create our database & Table"""
     cur.execute('''CREATE TABLE IF NOT EXISTS qso
@@ -105,42 +201,6 @@ def create_db():
     cur.execute('''CREATE TABLE IF NOT EXISTS station
         ([callsign] TEXT, [category] TEXT, [section] TEXT) ''')
 
-    print(f"Created Database {dbname}")
-
-
-def contesting():
-    """ Get qso details and write them to the database."""
-    cur.execute("SELECT callsign, category, section FROM station")
-    ocall, ocat, osec = cur.fetchall()[0]
-
-    """ get band and mode data from rig """
-    band, mode = get_riginfo()
-
-    utcdate = str(datetime.utcnow().date())
-    utctime = str(datetime.utcnow().strftime('%H%M'))
-    tcall = input("Their Callsign: ").upper()
-
-    """ Let's see if we can detect no input and use that as an exit criteria"""
-    if not tcall:
-        print("You didn't enter a callsign.  Do you want to exit?")
-        exit = input("YES or NO: ").upper()
-        if (exit) == "YES":
-            return False
-        elif(exit) == "NO":
-            tcall = input("Their Callsign: ").upper()
-        else:
-            print(f"I'm not sure what {exit} is, but I'm exiting anyway.")
-            return False
-
-    tcat = input("Their Category: ").upper()
-    tsec = input("Their Section: ").upper()
-
-    qso = (utcdate, utctime, band, mode, ocall, ocat, osec, tcall, tcat, tsec)
-
-    create_qso(con, qso)
-    print("")
-    return True
-
 
 def create_qso(con, qso):
     """ Function for actually writing qso entries, called by getqso()"""
@@ -152,18 +212,31 @@ def create_qso(con, qso):
     return cur.lastrowid
 
 
+'''i was not sure if this function was still needed.
+If yes, i might try to implement some kind of keystroke for viewing all
+logs. In the current format, it does not work'''
+
+
 def showlogs(con):
     """ Function to display all logs"""
     cur.execute("SELECT * FROM qso")
     qsos = cur.fetchall()
-
     for row in qsos:
         print(row)
 
 
+def show_last_ten_logs():
+    entries = []
+    cur.execute('SELECT column FROM qso LIMIT 10')
+    qsos = cur.fetchall()
+
+    for row in qsos:
+        entries.append(row)
+    return entries
+
+
 """
 We still need to setup the export logs feature.
-
 def exportlogs():
     #create cabrillo format export of logs
     #maybe we put this in a separate script too?
