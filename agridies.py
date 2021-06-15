@@ -79,7 +79,7 @@ class adjustSettings(npyscreen.ActionForm):
         self.Ocall = self.add(text, name='Enter your station callsign')
         self.Osec = self.add(text, name='Enter your section')
 
-        if not category_check(self.Ocat.upper()):  # validity checks
+        if not category_check(self.Ocat.value.upper()):  # validity checks
             self.Ocat.value = 'You entered a wrong value. Please try anew'
 
         else:
