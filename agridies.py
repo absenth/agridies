@@ -55,12 +55,13 @@ class adjustSettings(npyscreen.ActionForm):
         #  we want to transfer these values to the main display
         getF.Ocall.value = self.Ocall.value.upper()
         getF.Osec.value = self.Osec.value.upper()
-
+        settings = (self.Ocall.value.upper(), self.Ocat.value.upper(),
+                    self.Osec.value.upper())
+        
         if category_check(self.Ocat.upper):
             self.parentApp.setNextForm('SECONDARY')
             # write the settings
-            write_settings(self.Ocall.value.upper(),
-                           self.Ocat.value.upper(), self.Osec.value.upper())
+            write_settings(settings)
             # to the database
         else:
             self.Ocat.value = "You entered a wrong value. Please try again"
@@ -78,16 +79,6 @@ class adjustSettings(npyscreen.ActionForm):
         self.Ocat = self.add(text, name='Enter your category here')
         self.Ocall = self.add(text, name='Enter your station callsign')
         self.Osec = self.add(text, name='Enter your section')
-
-        if not category_check(self.Ocat.value.upper()):  # validity checks
-            self.Ocat.value = 'You entered a wrong value. Please try anew'
-
-        else:
-            self.parentApp.Ocat = self.Ocat
-            self.parentApp.Ocall = self.Ocall
-            self.parentApp.Osec = self.Osec
-            settings = (self.Ocall, self.Ocat, self.Osec)
-            create_settings(con, settings)
 
 
 class mainDisplay(npyscreen.Form):
