@@ -58,7 +58,7 @@ class adjustSettings(npyscreen.ActionForm):
         settings = (self.Ocall.value.upper(), self.Ocat.value.upper(),
                     self.Osec.value.upper())
         
-        if category_check(self.Ocat.upper):
+        if category_check(self.Ocat.value.upper()):
             self.parentApp.setNextForm('SECONDARY')
             # write the settings
             write_settings(settings)
