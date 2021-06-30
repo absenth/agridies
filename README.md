@@ -12,12 +12,12 @@ of this project is literally "Field Day"_____
    * MODE (ie. Phone)
    * DATE (2021-06-28)
    * TIME (0900)
-   * OUR CALL (W1AW)
-   * OUR CATEGORY (1A)
-   * OUR SECTION (STX)
-   * HIS CALL (K9OOK)
-   * HIS CATEGORY  (1B)
-   * HIS SECTION (IN)
+   * SENT CALL (W1AW)
+   * SENT CATEGORY (1A)
+   * SENT SECTION (STX)
+   * RECIEVED CALL (K9OOK)
+   * RECIEVED CATEGORY  (1B)
+   * RECIEVED SECTION (IN)
 3. DATE & TIME should pull from the system, at the time we hit submit.
 4. There Should be a Setup that lets us set one time Contest Data.
 
