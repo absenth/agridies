@@ -34,10 +34,10 @@ def main():
 class Application(npyscreen.NPSAppManaged):
     def onStart(self):
         if not has_settings():
+            message = 'Welcome to agridies log'
             '''checking whether there are any settings yet,
              if not, prompt a settings window'''
 
-            message = 'Welcome to agridies log'
             self.addForm('MAIN', adjustSettings, name=message)
             self.addForm('SECONDARY', mainDisplay, name=message)
         else:
@@ -129,13 +129,9 @@ class mainDisplay(npyscreen.Form):
         self.Band.value, self.Mode.value = get_riginfo()
 
 
-def write_settings(Ocall, Ocat, Osec):
+def write_settings(settings):
     """ Function to collect station details and push them to the db """
-    ocall = Ocall
-    ocat = Ocat
-    osec = Osec
 
-    settings = (ocall, ocat, osec)
     create_settings(con, settings)
 
 
